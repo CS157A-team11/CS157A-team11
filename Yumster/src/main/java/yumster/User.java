@@ -1,5 +1,7 @@
 package yumster;
 
+import yumster.dao.UserDao;
+
 public class User {
 	private String cname, uname, email, password;
 
@@ -9,6 +11,11 @@ public class User {
 		this.uname = uname;
 		this.email = email;
 		this.password = password;
+	}
+	
+	public static String insert(User user) {
+		UserDao rdao = new UserDao();
+		return rdao.insert(user);
 	}
 
 	public String getUname() {
@@ -42,5 +49,6 @@ public class User {
 	public void setCname(String cname) {
 		this.cname = cname;
 	}
+	
 
 }

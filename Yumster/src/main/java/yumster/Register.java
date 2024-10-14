@@ -6,13 +6,16 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import yumster.dao.UserDao;
+
+import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 
 /**
  * Servlet implementation class Register
  */
 @WebServlet("/Register")
 public class Register extends HttpServlet {
+	Argon2PasswordEncoder encoder = Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();
+
 	private static final long serialVersionUID = 1L;
 
 	/**
@@ -43,9 +46,9 @@ public class Register extends HttpServlet {
 		String cname = request.getParameter("cname");
 		String email = request.getParameter("email");
 		String password = request.getParameter("password");
-		User user = new User(uname, cname, email, password);
-		UserDao rdao = new UserDao();
-		String result = rdao.insert(user);
-		response.getWriter().println(result);
+		String pwHash = encoder.encode(password);
+		User user = new User(uname, cname, email, pwHash);
+		String result = User.insert(user);
+		response.getWriter().print(result);
 	}
 }

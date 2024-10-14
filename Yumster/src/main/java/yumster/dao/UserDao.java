@@ -12,7 +12,7 @@ public class UserDao {
 		DbConnection dbCon = new DbConnection();
 		Connection con = dbCon.getConnection();
 		String sql = "INSERT INTO users (username, commonName, email, passwordHash) VALUES (?,?,?,?);";
-		String result = "Data Entered Successfully";
+		String result = "Success";
 		try {
 			PreparedStatement ps = con.prepareStatement(sql);
 			ps.setString(1, user.getUname());
@@ -22,7 +22,7 @@ public class UserDao {
 			ps.executeUpdate();
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
-			result = "Data Not Entered Successfully";
+			result = "Failed to insert";
 			e.printStackTrace();
 		}
 		return result;
