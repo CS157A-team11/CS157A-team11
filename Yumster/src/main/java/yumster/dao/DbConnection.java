@@ -7,10 +7,10 @@ import java.sql.PreparedStatement;
 import java.sql.Statement;
 
 public class DbConnection {
-    private String dbUrl = "jdbc:mysql://localhost:3306/yumster";
+	private String dbUrl = "jdbc:mysql://localhost:3306/yumster";
 	private String dbUname = "yumster";
 	private String dbPassword = "weakpassword123!@#";
-    private String dbDriver = "com.mysql.cj.jdbc.Driver";
+	private String dbDriver = "com.mysql.cj.jdbc.Driver";
 	private static DbConnection instance = null;
 	Connection connection = null;
 
@@ -24,8 +24,7 @@ public class DbConnection {
 		return instance;
 	}
 
-    public void loadDriver(String dbDriver)
-	{
+	public void loadDriver(String dbDriver) {
 		try {
 			Class.forName(dbDriver);
 		} catch (ClassNotFoundException e) {
@@ -33,15 +32,16 @@ public class DbConnection {
 			e.printStackTrace();
 		}
 	}
+
 	/**
 	 * Initializes, or returns the currently open connection for the object
 	 */
 	public Connection getConnection() {
 		if (connection == null) {
 			try {
-                loadDriver(dbDriver);
-                connection = DriverManager.getConnection(dbUrl, dbUname, dbPassword);
-                connection.setAutoCommit(true);
+				loadDriver(dbDriver);
+				connection = DriverManager.getConnection(dbUrl, dbUname, dbPassword);
+				connection.setAutoCommit(true);
 //			} catch (ClassNotFoundException e) {
 //				// JDBC library likely not found
 //				System.err.println(e.getMessage());
