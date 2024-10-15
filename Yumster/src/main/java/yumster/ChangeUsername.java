@@ -14,8 +14,6 @@ import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
  */
 @WebServlet("/api/v1/change-username")
 public class ChangeUsername extends HttpServlet {
-	Argon2PasswordEncoder encoder = Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();
-
 	private static final long serialVersionUID = 1L;
 
 	/**
@@ -44,39 +42,25 @@ public class ChangeUsername extends HttpServlet {
 			throws ServletException, IOException {
 		response.setContentType("application/json");
 		
-		//asks for user
-//		String uname = request.getParameter("uname");
-//		if (User.getByEmail(uname, user)) { // if username exists, assign user with the corresponding
-//			user = 
-//		} else {
-//			response.getWriter().print("User not found");
-//		}
-//
-//		if (User.checkExists(uname, email)) {
-//			Response res = new Response("error", "Username already taken.");
-//			response.getWriter().print(res.toJson());
-//			return;
-//		}
-//			
-//			
-//		String cname = request.getParameter("cname");
-//		String password = request.getParameter("password");
-//		if (password.length() < 8) {
-//			Response res = new Response("error", "Password must be at least 8 characters long.");
-//			response.getWriter().print(res.toJson());
-//			return;
-//		}
-//		
-//		String pwHash = encoder.encode(password);
-//		User user = new User(uname, cname, email, pwHash);
-//		boolean result = User.insert(user);
-//		
-//		Response res = new Response();
-//		if (!result) {
-//			res.setStatus("error");
-//			res.setDescription("Failed to Add User");
-//		}
-//		response.getWriter().print(res.toJson());
+		String newUsername = request.getParameter("uname");
+	
+		if (User.checkExists(newUsername)) {
+			Response res = new Response("error", "Username already taken.");
+			response.getWriter().print(res.toJson());
+			return;
+		}
+		
+		// placeholder until Henry makes the token dependency
+		//
+		User user = new User(); // TODO: UPDATE the user's username WHERE token = (user's token)
+		boolean result = user.updateUsername(newUsername);
+		
+		Response res = new Response();
+		if (!result) {
+			res.setStatus("error");
+			res.setDescription("Failed to change username");
+		}
+		response.getWriter().print(res.toJson());
 	}
 	
 }

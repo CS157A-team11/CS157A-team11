@@ -39,16 +39,6 @@ public class UserDao {
 		return true;
 	}
 	
-	
-	/**
-	 * Checks if a username or email (both fields with same data) is taken/user exists with that data.
-	 * @param emailOrUsername
-	 * @return boolean status, success or fail
-	 */
-	public boolean checkExists(String emailOrUsername) {
-		return checkExists(emailOrUsername, emailOrUsername);
-	}
-	
 	/**
 	 * Checks if a username or email is taken/user exists with that data.
 	 * @param email
@@ -181,32 +171,48 @@ public class UserDao {
 		return true;
 	}
 	
-	public boolean updateUsername(String username, User user) {
+	public boolean updateUsername(String username, int userId) {
 	    DbConnection dbCon = new DbConnection();
 	    Connection con = dbCon.getConnection();
-	    String sql = "UPDATE users SET username = ? WHERE userId = ?";
+	    String sql = "UPDATE users SET Username = ? WHERE UserId = ?";
 	    try {
-	        PreparedStatement pstmt = con.prepareStatement(sql);
-	        pstmt.setString(1, username);
-	        //pstmt.setInt(2, user.getUserID());
-	        int rowsAffected = pstmt.executeUpdate();
-	        
-	        // Check if the update was successful
+	        PreparedStatement ps = con.prepareStatement(sql);
+	        ps.setString(1, username);
+	        ps.setInt(2, userId);
+	        int rowsAffected = ps.executeUpdate();
 	        if(rowsAffected > 0) {
-	            return true; // Update successful
+	            return true;
 	        } else {
-	            return false; // Update failed
+	        	log.error("Expected more than zero updates from updateUsername");
+	            return false;
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        return false;
+	    }
+	}
+
+	public boolean updatePassword(String newPasswordHash, int userId) {
+	    DbConnection dbCon = new DbConnection();
+	    Connection con = dbCon.getConnection();
+	    String sql = "UPDATE users SET PasswordHash = ? WHERE UserId = ?";
+	    try {
+	        PreparedStatement ps = con.prepareStatement(sql);
+	        ps.setString(1, newPasswordHash);
+	        ps.setInt(2, userId);
+	        int rowsAffected = ps.executeUpdate();
+	        
+	        if(rowsAffected > 0) {
+	            return true;
+	        } else {
+	            System.out.println("Expected more than zero updates from updatePassword");
+	            return false;
 	        }
 	        
 	    } catch (SQLException e) {
 	        e.printStackTrace();
-	        return false; // Update failed
+	        return false;
 	    }
 	}
 
-	public boolean updatePassword(String password) {
-		DbConnection dbCon = new DbConnection();
-		Connection con = dbCon.getConnection();
-		return true;
-	}
 }

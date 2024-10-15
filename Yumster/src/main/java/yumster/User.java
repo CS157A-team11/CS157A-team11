@@ -21,6 +21,15 @@ public class User {
 		return rdao.insert(user);
 	}
 	
+	/**
+	 * Checks if a username or email (both fields with same data) is taken/user exists with that data.
+	 * @param emailOrUsername
+	 * @return boolean status, success or fail
+	 */
+	public static boolean checkExists(String emailOrUsername) {
+		return rdao.checkExists(emailOrUsername, emailOrUsername);
+	}
+	
 	public static boolean checkExists(String email, String username) {
 		return rdao.checkExists(email, username);
 	}
@@ -31,6 +40,14 @@ public class User {
 	
 	public static boolean getByUsername(String username, User user) {
 		return rdao.getByUsername(username, user);
+	}
+
+	public boolean updateUsername(String username) {
+		return rdao.updateUsername(username, this.id);
+	}
+	
+	public boolean updatePassword(String passwordHash) {
+		return rdao.updatePassword(passwordHash, this.id);
 	}
 	
 	public int getId() {
@@ -72,6 +89,5 @@ public class User {
 	public void setCname(String cname) {
 		this.cname = cname;
 	}
-	
 
 }

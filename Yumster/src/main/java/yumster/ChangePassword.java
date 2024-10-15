@@ -44,27 +44,14 @@ public class ChangePassword extends HttpServlet {
 			throws ServletException, IOException {
 		response.setContentType("application/json");
 		
-		String uname = request.getParameter("uname");
-		String email = request.getParameter("email");
-
-		if (User.checkExists(uname, email)) {
-			Response res = new Response("error", "Username or Email already taken.");
-			response.getWriter().print(res.toJson());
-			return;
-		}
-			
-			
-		String cname = request.getParameter("cname");
-		String password = request.getParameter("password");
-		if (password.length() < 8) {
-			Response res = new Response("error", "Password must be at least 8 characters long.");
-			response.getWriter().print(res.toJson());
-			return;
-		}
+		String newPassword = request.getParameter("password");
+		// hash the password!
+		String hashedNewPassword = encoder.encode(newPassword);
 		
-		String pwHash = encoder.encode(password);
-		User user = new User(uname, cname, email, pwHash);
-		boolean result = User.insert(user);
+		// placeholder until Henry makes the token dependency
+		//
+		User user = new User(); // TODO: UPDATE user's PasswordHash WHERE token = (user's token)
+		boolean result = user.updatePassword(hashedNewPassword); 
 		
 		Response res = new Response();
 		if (!result) {
