@@ -15,8 +15,8 @@ import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 /**
  * Servlet implementation class Register
  */
-@WebServlet("/api/v1/register")
-public class Register extends HttpServlet {
+@WebServlet("/api/v1/login")
+public class Login extends HttpServlet {
 	Argon2PasswordEncoder encoder = Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();
 	private static final long serialVersionUID = 1L;
 	
@@ -26,7 +26,7 @@ public class Register extends HttpServlet {
 	/**
 	 * @see HttpServlet#HttpServlet()
 	 */
-	public Register() {
+	public Login() {
 		super();
 		// TODO Auto-generated constructor stub
 	}
@@ -49,53 +49,20 @@ public class Register extends HttpServlet {
 			throws ServletException, IOException {
 		response.setContentType("application/json");
 		
-		String uname = request.getParameter("username");
-		String email = request.getParameter("email");
-		
-		// Check if username has an @ character, disallow
-		if (uname.indexOf('@') != -1) {
-			Response res = new Response("error", "We do not allow @ in username.");
-			response.getWriter().print(res.toJson());
-			return;
-		}
-		
-		// Check if email given matches the email regex.
-	    Matcher matcher = pattern.matcher(email);
-		if (matcher.find()) {
-			Response res = new Response("error", "Email does not look like an email.");
-			response.getWriter().print(res.toJson());
-			return;
-		}
-		
-		// Check that the username nor email is not already taken
-		if (User.checkExists(uname, email)) {
-			Response res = new Response("error", "Username or Email already taken.");
-			response.getWriter().print(res.toJson());
-			return;
-		}
+		String username = request.getParameter("username");
+		String password = request.getParameter("loginPassword");
+		User user = new User();
+		if (username.indexOf('@') == -1) {
+			// Handle as username
+			User.getByUsername(username, user);
+			if (!encoder.matches(password, user.getPasswordHash())) {
+				Response res = new Response("error", "Your input does not match our records.");
+				response.getWriter().print(res.toJson());
+				return;
+			}
 			
-		// Check that the password is long enough
-		String password = request.getParameter("signupPassword");
-		if (password.length() < 8) {
-			Response res = new Response("error", "Password must be at least 8 characters long.");
-			response.getWriter().print(res.toJson());
-			return;
+		} else {
+			// Handle as email
 		}
-
-		String cname = request.getParameter("name");
-		
-		// Hash the password
-		String pwHash = encoder.encode(password);
-		// Create user and store into database
-		User user = new User(uname, cname, email, pwHash);
-		boolean result = User.insert(user);
-		
-		Response res = new Response();
-		if (!result) {
-			res.setStatus("error");
-			res.setDescription("Failed to Add User");
-		}
-		response.getWriter().print(res.toJson());
 	}
-	
 }

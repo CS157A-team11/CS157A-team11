@@ -3,6 +3,7 @@ package yumster;
 import yumster.dao.UserDao;
 
 public class User {
+	private int id;
 	private String cname, uname, email, password;
 	private static UserDao rdao = new UserDao();
 	
@@ -30,6 +31,14 @@ public class User {
 	
 	public static boolean getByUsername(String username, User user) {
 		return rdao.getByUsername(username, user);
+	}
+	
+	public int getId() {
+		return id;
+	}
+	
+	public void setId(int id) {
+		this.id = id;
 	}
 
 	public String getUname() {
