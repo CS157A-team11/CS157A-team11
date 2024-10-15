@@ -15,6 +15,11 @@ import yumster.User;
 public class UserDao {
     private Log log = LogFactory.getLog(UserDao.class);
 	
+    /**
+     * Insert a new user into the database
+     * @param user
+     * @return boolean status, success or fail
+     */
 	public boolean insert(User user) {
 		DbConnection dbCon = new DbConnection();
 		Connection con = dbCon.getConnection();
@@ -34,6 +39,22 @@ public class UserDao {
 		return true;
 	}
 	
+	
+	/**
+	 * Checks if a username or email (both fields with same data) is taken/user exists with that data.
+	 * @param emailOrUsername
+	 * @return boolean status, success or fail
+	 */
+	public boolean checkExists(String emailOrUsername) {
+		return checkExists(emailOrUsername, emailOrUsername);
+	}
+	
+	/**
+	 * Checks if a username or email is taken/user exists with that data.
+	 * @param email
+	 * @param username
+	 * @return boolean status, success or fail
+	 */
 	public boolean checkExists(String email, String username) {
 		DbConnection dbCon = new DbConnection();
 		Connection con = dbCon.getConnection();
@@ -55,10 +76,51 @@ public class UserDao {
 		return false;
 	}
 	
+	/**
+	 * Gets user by userid, uses an empty user passed from above
+	 * @param userId
+	 * @param user
+	 * @return boolean status, success or fail
+	 */
+	public boolean getById(int userId, User user) {
+		DbConnection dbCon = new DbConnection();
+		Connection con = dbCon.getConnection();
+		String sql = "SELECT userId, username, commonName, email, passwordHash FROM users WHERE id = ?;";
+		try {
+			PreparedStatement ps = con.prepareStatement(sql);
+			ps.setInt(1, userId);
+			ResultSet rs = ps.executeQuery();
+			if (rs != null) {
+				rs.last();
+				if (rs.getRow() == 1) {
+					user.setId(rs.getInt(1));
+					user.setUname(rs.getString(2));
+					user.setCname(rs.getString(3));
+					user.setEmail(rs.getString(4));
+					user.setPassword(rs.getString(5));
+				} else {
+					log.error("Expected one result from getById, found " + rs.getRow());
+					return false;
+				}
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return false;
+		}
+		return true;
+	}
+	
+	/**
+	 * Gets user by email, uses an empty user passed from above
+	 * @param email
+	 * @param user
+	 * @return boolean status, success or fail
+	 */
 	public boolean getByEmail(String email, User user) {
 		DbConnection dbCon = new DbConnection();
 		Connection con = dbCon.getConnection();
-		String sql = "SELECT username, commonName, email, passwordHash FROM users WHERE email = ?;";
+		String sql = "SELECT userId, username, commonName, email, passwordHash FROM users WHERE email = ?;";
 		try {
 			PreparedStatement ps = con.prepareStatement(sql);
 			ps.setString(1, email);
@@ -66,10 +128,11 @@ public class UserDao {
 			if (rs != null) {
 				rs.last();
 				if (rs.getRow() == 1) {
-					user.setUname(rs.getString(1));
-					user.setCname(rs.getString(2));
-					user.setEmail(rs.getString(3));
-					user.setPassword(rs.getString(4));
+					user.setId(rs.getInt(1));
+					user.setUname(rs.getString(2));
+					user.setCname(rs.getString(3));
+					user.setEmail(rs.getString(4));
+					user.setPassword(rs.getString(5));
 				} else {
 					log.error("Expected one result from getByEmail, found " + rs.getRow());
 					return false;
@@ -83,10 +146,16 @@ public class UserDao {
 		return true;
 	}
 	
+	/**
+	 * Gets user by username, uses an empty user passed from above
+	 * @param username
+	 * @param user
+	 * @return boolean status, success or fail
+	 */
 	public boolean getByUsername(String username, User user) {
 		DbConnection dbCon = new DbConnection();
 		Connection con = dbCon.getConnection();
-		String sql = "SELECT username, commonName, email, passwordHash FROM users WHERE username = ?;";
+		String sql = "SELECT userId, username, commonName, email, passwordHash FROM users WHERE username = ?;";
 		try {
 			PreparedStatement ps = con.prepareStatement(sql);
 			ps.setString(1, username);
@@ -94,12 +163,13 @@ public class UserDao {
 			if (rs != null) {
 				rs.last();
 				if (rs.getRow() == 1) {
-					user.setUname(rs.getString(1));
-					user.setCname(rs.getString(2));
-					user.setEmail(rs.getString(3));
-					user.setPassword(rs.getString(4));
+					user.setId(rs.getInt(1));
+					user.setUname(rs.getString(2));
+					user.setCname(rs.getString(3));
+					user.setEmail(rs.getString(4));
+					user.setPassword(rs.getString(5));
 				} else {
-					log.error("Expected one result from getByEmail, found " + rs.getRow());
+					log.error("Expected one result from getByUsername, found " + rs.getRow());
 					return false;
 				}
 			}
