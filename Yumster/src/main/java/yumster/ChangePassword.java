@@ -12,8 +12,8 @@ import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 /**
  * Servlet implementation class Register
  */
-@WebServlet("/Register")
-public class Register extends HttpServlet {
+@WebServlet("/api/v1/user/change-password")
+public class ChangePassword extends HttpServlet {
 	Argon2PasswordEncoder encoder = Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();
 
 	private static final long serialVersionUID = 1L;
@@ -21,7 +21,7 @@ public class Register extends HttpServlet {
 	/**
 	 * @see HttpServlet#HttpServlet()
 	 */
-	public Register() {
+	public ChangePassword() {
 		super();
 		// TODO Auto-generated constructor stub
 	}

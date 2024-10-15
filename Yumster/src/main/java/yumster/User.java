@@ -5,7 +5,7 @@ import yumster.dao.UserDao;
 public class User {
 	private String cname, uname, email, password;
 	private static UserDao rdao = new UserDao();
-
+	
 	public User(String uname, String cname, String email, String password) {
 		super();
 		this.cname = cname;
@@ -14,6 +14,8 @@ public class User {
 		this.password = password;
 	}
 	
+	public User() {}
+
 	public static boolean insert(User user) {
 		return rdao.insert(user);
 	}

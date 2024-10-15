@@ -110,4 +110,33 @@ public class UserDao {
 		}
 		return true;
 	}
+	
+	public boolean updateUsername(String username, User user) {
+	    DbConnection dbCon = new DbConnection();
+	    Connection con = dbCon.getConnection();
+	    String sql = "UPDATE users SET username = ? WHERE userId = ?";
+	    try {
+	        PreparedStatement pstmt = con.prepareStatement(sql);
+	        pstmt.setString(1, username);
+	        //pstmt.setInt(2, user.getUserID());
+	        int rowsAffected = pstmt.executeUpdate();
+	        
+	        // Check if the update was successful
+	        if(rowsAffected > 0) {
+	            return true; // Update successful
+	        } else {
+	            return false; // Update failed
+	        }
+	        
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        return false; // Update failed
+	    }
+	}
+
+	public boolean updatePassword(String password) {
+		DbConnection dbCon = new DbConnection();
+		Connection con = dbCon.getConnection();
+		return true;
+	}
 }
