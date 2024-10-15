@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <title>Yumster! Sign Up</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-image: url('Background image.jpeg');
+            background-size: cover;
+            background-position: center;
+        }
+        .signup-container {
+            width: 350px;
+            padding: 40px;
+            border-radius: 5px;
+            background-color: #e9ecef; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        .form-group {
+            position: relative;
+            margin-bottom: 30px;
+        }
+        .form-control {
+            border: none;
+            border-bottom: 2px solid #ced4da;
+            border-radius: 0;
+            box-shadow: none;
+            background-color: #e9ecef; 
+        }
+        .form-control::placeholder {
+            color: transparent;
+        }
+        .form-control:focus {
+            border-color: #007bff;
+        }
+        .form-group label {
+            position:absolute; 
+             top :0; 
+             left :0; 
+             font-size :0.85em; 
+             color:#666; 
+             transition :all 0.2s ease-in-out; 
+         } 
+         .form-control:not(:placeholder-shown) + label,
+         .form-control:focus + label{
+             top:-20px; 
+             font-size :0.75em; 
+             color:#007bff; 
+         } 
+         .error-message {
+             color: red;
+             font-size: 0.8em;
+         }
+     </style> 
+ </head> 
+
+<body> 
+   <div class="signup-container"> 
+       <h1 class="text-center mb-4">Yumster!</h1> 
+       <h4 class="text-center mb-4">Sign Up</h4> 
+       <form id="signupForm" action="./api/v1/register" method="post">
+           <!-- Name field -->
+           <div class="form-group"> 
+               <input type="text" class="form-control" id="name" name="common_name" placeholder=" " required> 
+               <label for="name">Name</label> 
+           </div> 
+           <!-- Username field -->
+           <div class="form-group"> 
+               <input type="text" class="form-control" id="username" name="username" placeholder=" " required> 
+               <label for="username">Username</label> 
+           </div> 
+           <!-- Email field -->
+           <div class="form-group"> 
+               <input type="email" class="form-control" id="email" name="email" placeholder=" " required> 
+               <label for="email">Email</label> 
+           </div> 
+           <!-- Password field with constraints -->
+           <div class="form-group"> 
+               <input type="password" class="form-control" id="signupPassword" name="password" placeholder="" required>
+               <label for="signupPassword">Password</label>
+               <div id="passwordError" class="error-message"></div>
+           </div>  
+           <!-- Submit button -->
+           <button type="submit" class="btn btn-primary btn-block">Sign up</button>
+       </form>  
+   </div>  
+
+   <!-- Scripts -->  
+   <script>
+       const passwordError = document.getElementById('passwordError');
+       document.getElementById('signupForm').addEventListener('submit', function(event) {
+    	   event.preventDefault();
+           const password = document.getElementById('signupPassword').value;
+           
+           const pattern = /.{8,}/;
+
+           if (!pattern.test(password)) {
+               	passwordError.textContent = 'Password must contain at least 8 characters.';
+				return;
+           } else {
+               	passwordError.textContent = '';
+           }
+           
+    	   var xhr = new XMLHttpRequest();
+    	   xhr.open("POST", "./api/v1/register");
+    	   xhr.onload = function(event) { 
+    	       if (JSON.parse(event.target.response).status == "success") {
+    	    	   window.location.href = "SignupSuccess.html";
+    	       } else {
+    	    	   alert("Error: " + event.target.response);
+    	       }; 
+    	   }; 
+    	   // or onerror, onabort
+    	   var formData = new FormData(document.getElementById("signupForm")); 
+    	   xhr.send(formData);
+       });
+   </script>
+   <script src=https://code.jquery.com/jquery-3.5.1.slim.min.js></script>  
+   <script src=https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js></script>  
+   <script src=https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js></script>  
+</body>  
+</html>

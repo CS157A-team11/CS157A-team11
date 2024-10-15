@@ -2,17 +2,21 @@ package yumster;
 
 import java.io.IOException;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
+import yumster.dao.UserDaoImpl;
+import yumster.dao.UserTokenDaoImpl;
 
 /**
  * Servlet implementation class Register
  */
 @WebServlet("/api/v1/change-username")
+@MultipartConfig
 public class ChangeUsername extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 
@@ -41,19 +45,44 @@ public class ChangeUsername extends HttpServlet {
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		response.setContentType("application/json");
+		UserDaoImpl userDao = new UserDaoImpl();
+		UserTokenDaoImpl userTokenDao = new UserTokenDaoImpl();
+		
+		Cookie[] cookies = request.getCookies();
+		if (cookies == null) {
+			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+			Response res = new Response("error", "Unauthenticated");
+			response.getWriter().print(res.toJson());
+			return;
+		}
+		User user = null;
+		for (int i = 0; i < cookies.length; i++) {
+			String name = cookies[i].getName();
+			String value = cookies[i].getValue();
+
+			if (name == "token") {
+				UserToken userToken = userTokenDao.getByToken(value);
+				if (userToken != null) {
+					user = userDao.getById(userToken.getUserId());
+				} 
+			}
+		}
+		if (user == null) {
+			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+			Response res = new Response("error", "Unauthenticated");
+			response.getWriter().print(res.toJson());
+			return;
+		}
 		
 		String newUsername = request.getParameter("uname");
 	
-		if (User.checkExists(newUsername)) {
+		if (userDao.checkExists(newUsername)) {
 			Response res = new Response("error", "Username already taken.");
 			response.getWriter().print(res.toJson());
 			return;
 		}
 		
-		// placeholder until Henry makes the token dependency
-		//
-		User user = new User(); // TODO: UPDATE the user's username WHERE token = (user's token)
-		boolean result = user.updateUsername(newUsername);
+		boolean result = userDao.updateUsername(newUsername, user);
 		
 		Response res = new Response();
 		if (!result) {

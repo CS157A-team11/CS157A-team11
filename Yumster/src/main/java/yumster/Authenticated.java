@@ -9,7 +9,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
+import com.google.gson.Gson;
 
 import yumster.dao.UserDaoImpl;
 import yumster.dao.UserTokenDaoImpl;
@@ -17,17 +17,15 @@ import yumster.dao.UserTokenDaoImpl;
 /**
  * Servlet implementation class Register
  */
-@WebServlet("/api/v1/user/change-password")
+@WebServlet("/api/v1/authenticated")
 @MultipartConfig
-public class ChangePassword extends HttpServlet {
-	Argon2PasswordEncoder encoder = Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();
-
+public class Authenticated extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 
 	/**
 	 * @see HttpServlet#HttpServlet()
 	 */
-	public ChangePassword() {
+	public Authenticated() {
 		super();
 		// TODO Auto-generated constructor stub
 	}
@@ -37,16 +35,6 @@ public class ChangePassword extends HttpServlet {
 	 *      response)
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		response.getWriter().append("Served at: ").append(request.getContextPath());
-	}
-
-	/**
-	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse
-	 *      response)
-	 */
-	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		response.setContentType("application/json");
 		UserDaoImpl userDao = new UserDaoImpl();
@@ -64,11 +52,11 @@ public class ChangePassword extends HttpServlet {
 			String name = cookies[i].getName();
 			String value = cookies[i].getValue();
 
-			if (name == "token") {
+			if (name.equals("token")) {
 				UserToken userToken = userTokenDao.getByToken(value);
 				if (userToken != null) {
 					user = userDao.getById(userToken.getUserId());
-				} 
+				}
 			}
 		}
 		if (user == null) {
@@ -77,20 +65,18 @@ public class ChangePassword extends HttpServlet {
 			response.getWriter().print(res.toJson());
 			return;
 		}
-		// authenticated
+		
+		Gson gson = new Gson();
+		response.getWriter().print(gson.toJson(user));		
+	}
 
-		String newPassword = request.getParameter("password");
-		// hash the password!
-		String hashedNewPassword = encoder.encode(newPassword);
-
-		boolean result = userDao.updatePassword(hashedNewPassword, user);
-
-		Response res = new Response();
-		if (!result) {
-			res.setStatus("error");
-			res.setDescription("Failed to Add User");
-		}
-		response.getWriter().print(res.toJson());
+	/**
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse
+	 *      response)
+	 */
+	protected void doPost(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		response.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
 	}
 
 }

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <title>Yumster! Login</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-image: url('Background image.jpeg');
+            background-color: #f8f9fa;
+        }
+        .login-container {
+            width: 350px;
+            padding: 40px;
+            border-radius: 5px;
+            background-color: #e9ecef;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        .form-group {
+            position: relative;
+            margin-bottom: 30px;
+        }
+        .form-control {
+            border: none;
+            border-bottom: 2px solid #ced4da;
+            border-radius: 0;
+            box-shadow: none;
+            background-color: #e9ecef;
+        }
+        .form-control::placeholder {
+            color: transparent;
+        }
+        .form-control:focus {
+            border-color: #007bff;
+        }
+        .form-group label {
+            position: absolute;
+            top: 0;
+            left: 0;
+            font-size: 0.85em;
+            color: #666;
+            transition: all 0.2s ease-in-out;
+        }
+        .form-control:not(:placeholder-shown) + label,
+        .form-control:focus + label {
+            top: -20px;
+            font-size: 0.75em;
+            color: #007bff;
+        }
+        .text-right a {
+            font-size: 0.9em;
+        }
+        .error-message {
+            color: red;
+            font-size: 0.8em;
+        }
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1 class="text-center mb-4">Yumster!</h1>
+        <h4 class="text-center mb-4">Login</h4>
+        <form id="loginForm" action="./api/v1/login" method="post">
+            <div class="form-group">
+                <input type="text" class="form-control" id="usernameEmail" name="username_email" placeholder=" " required>
+                <label for="usernameEmail">Username or Email</label>
+            </div>
+            <div class="form-group">
+                <input type="password" class="form-control" id="password" name="password" placeholder=" " required>
+                <label for="password">Password</label>
+                <span class="toggle-password">👁️</span>
+                <div class="text-right">
+                    <a href="#">Forgot Password?</a>
+                </div>
+                <div id="passwordError" class="error-message"></div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Sign in</button>
+        </form>
+        <p class="text-center mt-3">Don't have an account? <a href="SignupPage.html">Sign up</a></p>
+    </div>
+
+    <script>
+        document.querySelector('.toggle-password').addEventListener('click', function() {
+            const passwordField = document.getElementById('password');
+            
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                this.textContent = '🙈';
+            } else {
+                passwordField.type = 'password';
+                this.textContent = '👁️';
+            }
+        });
+
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+           const password = document.getElementById('password').value;
+           const passwordError = document.getElementById('passwordError');
+           event.preventDefault();
+
+           if (password.length < 8) {
+               passwordError.textContent = 'Password incorrect.';
+           } else {
+               passwordError.textContent = '';
+           }
+           
+           var xhr = new XMLHttpRequest();
+    	   xhr.open("POST", "./api/v1/login");
+    	   xhr.onload = function(event) { 
+    	       if (JSON.parse(event.target.response).status == "success") {
+    	    	   window.location.href = "LoginSuccess.html";
+    	       } else {
+    	    	   alert("Error: " + event.target.response);
+    	       }; 
+    	   }; 
+    	   // or onerror, onabort
+    	   var formData = new FormData(document.getElementById("loginForm")); 
+    	   xhr.send(formData);
+       });
+    </script>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

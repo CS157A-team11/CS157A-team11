@@ -1,23 +1,35 @@
 package yumster;
 
 import java.io.IOException;
+import java.security.SecureRandom;
+
 import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import java.util.Base64;
+import java.util.Base64.Encoder;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 
+import yumster.dao.UserDaoImpl;
+import yumster.dao.UserTokenDaoImpl;
+
 /**
  * Servlet implementation class Register
  */
 @WebServlet("/api/v1/login")
+@MultipartConfig
 public class Login extends HttpServlet {
 	Argon2PasswordEncoder encoder = Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();
+	Encoder b64encoder = Base64.getEncoder();
+    SecureRandom random = new SecureRandom();
 	private static final long serialVersionUID = 1L;
 	
 	// https://emailregex.com/
@@ -48,21 +60,50 @@ public class Login extends HttpServlet {
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		response.setContentType("application/json");
-		
-		String username = request.getParameter("username");
-		String password = request.getParameter("loginPassword");
-		User user = new User();
-		if (username.indexOf('@') == -1) {
+		UserDaoImpl userDao = new UserDaoImpl();
+		UserTokenDaoImpl userTokenDao = new UserTokenDaoImpl();
+
+		String usernameEmail = request.getParameter("username_email");
+		String password = request.getParameter("password");
+		User user = null;
+		if (usernameEmail.indexOf('@') == -1) {
 			// Handle as username
-			User.getByUsername(username, user);
-			if (!encoder.matches(password, user.getPasswordHash())) {
-				Response res = new Response("error", "Your input does not match our records.");
-				response.getWriter().print(res.toJson());
-				return;
-			}
-			
+			user = userDao.getByUsername(usernameEmail);
 		} else {
 			// Handle as email
+			user = userDao.getByEmail(usernameEmail);
 		}
+
+		if (user == null) {
+			encoder.encode(password); // prevent timing attack by hashing input
+			Response res = new Response("error", "Your input does not match our records.");
+			response.getWriter().print(res.toJson());
+			return;
+		}
+		if (!encoder.matches(password, user.getPasswordHash())) {
+			Response res = new Response("error", "Your input does not match our records.");
+			response.getWriter().print(res.toJson());
+			return;
+		}
+		// authenticated 
+		
+		// generate token
+		byte[] arr = new byte[36]; // 36 * 8 = 288 / 6 = 48 b64 chars
+		random.nextBytes(arr);
+		String token = b64encoder.encodeToString(arr);
+		
+		// set cookie
+		Cookie cookie = new Cookie("token", token);
+		cookie.setHttpOnly(true);
+		cookie.setSecure(true);
+		cookie.setMaxAge(86400); // 60*60*24 = 1 day
+		response.addCookie(cookie);
+		
+		// store token, expiration 1 day
+		userTokenDao.insert(user.getId(), token, (System.currentTimeMillis() / 1000L) + 86400);
+		
+		Response res = new Response();
+		response.getWriter().print(res.toJson());
+		return;
 	}
 }
