@@ -35,20 +35,42 @@ public class Register extends HttpServlet {
 		// TODO Auto-generated method stub
 		response.getWriter().append("Served at: ").append(request.getContextPath());
 	}
-
+	
 	/**
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse
 	 *      response)
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
+		response.setContentType("application/json");
+		
 		String uname = request.getParameter("uname");
-		String cname = request.getParameter("cname");
 		String email = request.getParameter("email");
+
+		if (User.checkExists(uname, email)) {
+			Response res = new Response("error", "Username or Email already taken.");
+			response.getWriter().print(res.toJson());
+			return;
+		}
+			
+			
+		String cname = request.getParameter("cname");
 		String password = request.getParameter("password");
+		if (password.length() < 8) {
+			Response res = new Response("error", "Password must be at least 8 characters long.");
+			response.getWriter().print(res.toJson());
+			return;
+		}
+		
 		String pwHash = encoder.encode(password);
 		User user = new User(uname, cname, email, pwHash);
-		String result = User.insert(user);
-		response.getWriter().print(result);
+		boolean result = User.insert(user);
+		
+		Response res = new Response();
+		if (!result) {
+			res.setStatus("error");
+			res.setDescription("Failed to Add User");
+		}
+		response.getWriter().print(res.toJson());
 	}
 }

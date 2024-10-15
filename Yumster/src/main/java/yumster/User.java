@@ -4,6 +4,7 @@ import yumster.dao.UserDao;
 
 public class User {
 	private String cname, uname, email, password;
+	private static UserDao rdao = new UserDao();
 
 	public User(String uname, String cname, String email, String password) {
 		super();
@@ -13,9 +14,20 @@ public class User {
 		this.password = password;
 	}
 	
-	public static String insert(User user) {
-		UserDao rdao = new UserDao();
+	public static boolean insert(User user) {
 		return rdao.insert(user);
+	}
+	
+	public static boolean checkExists(String email, String username) {
+		return rdao.checkExists(email, username);
+	}
+	
+	public static boolean getByEmail(String email, User user) {
+		return rdao.getByEmail(email, user);
+	}
+	
+	public static boolean getByUsername(String username, User user) {
+		return rdao.getByUsername(username, user);
 	}
 
 	public String getUname() {
