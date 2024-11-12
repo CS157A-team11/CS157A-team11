@@ -10,7 +10,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import yumster.dao.DbConnection;
-import yumster.User;
+import yumster.obj.User;
 
 public class UserDaoImpl implements UserDao {
     private Log log = LogFactory.getLog(UserDao.class);

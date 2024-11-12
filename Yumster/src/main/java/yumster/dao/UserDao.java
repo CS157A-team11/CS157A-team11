@@ -1,6 +1,6 @@
 package yumster.dao;
 
-import yumster.User;
+import yumster.obj.User;
 
 interface UserDao {
 	public boolean insert(User user);

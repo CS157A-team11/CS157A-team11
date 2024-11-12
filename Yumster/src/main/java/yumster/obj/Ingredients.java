@@ -1,4 +1,4 @@
-package yumster.tables;
+package yumster.obj;
 
 public class Ingredients {
     private int ingredientId;     // Primary key

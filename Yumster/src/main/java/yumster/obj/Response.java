@@ -1,8 +1,8 @@
-package yumster;
+package yumster.obj;
 
 import com.google.gson.Gson;
 
-class Response {
+public class Response {
 	public String status;
 	public String description;
 	

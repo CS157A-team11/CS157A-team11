@@ -1,4 +1,4 @@
-package yumster.tables;
+package yumster.obj;
 
 public class CookingMethods {
     private int methodId;

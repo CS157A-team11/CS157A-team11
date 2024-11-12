@@ -1,27 +1,37 @@
-package yumster;
+package yumster.endpoints;
 
 import java.io.IOException;
+import java.security.SecureRandom;
+
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import java.util.Base64;
+import java.util.Base64.Encoder;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 
 import yumster.dao.UserDaoImpl;
+import yumster.dao.UserTokenDaoImpl;
+import yumster.obj.Response;
+import yumster.obj.User;
 
 /**
  * Servlet implementation class Register
  */
-@WebServlet("/api/v1/register")
+@WebServlet("/api/v1/login")
 @MultipartConfig
-public class Register extends HttpServlet {
+public class Login extends HttpServlet {
 	Argon2PasswordEncoder encoder = Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();
+	Encoder b64encoder = Base64.getEncoder();
+    SecureRandom random = new SecureRandom();
 	private static final long serialVersionUID = 1L;
 	
 	// https://emailregex.com/
@@ -30,7 +40,7 @@ public class Register extends HttpServlet {
 	/**
 	 * @see HttpServlet#HttpServlet()
 	 */
-	public Register() {
+	public Login() {
 		super();
 		// TODO Auto-generated constructor stub
 	}
@@ -53,54 +63,49 @@ public class Register extends HttpServlet {
 			throws ServletException, IOException {
 		response.setContentType("application/json");
 		UserDaoImpl userDao = new UserDaoImpl();
-		
-		String uname = request.getParameter("username");
-		String email = request.getParameter("email");
-		
-		// Check if username has an @ character, disallow
-		if (uname.indexOf('@') != -1) {
-			Response res = new Response("error", "We do not allow @ in username.");
-			response.getWriter().print(res.toJson());
-			return;
-		}
-		
-		// Check if email given matches the email regex.
-	    Matcher matcher = pattern.matcher(email);
-		if (!matcher.matches()) {
-			Response res = new Response("error", "Email does not look like an email.");
-			response.getWriter().print(res.toJson());
-			return;
-		}
-		
-		// Check that the username nor email is not already taken
-		if (userDao.checkExists(uname, email)) {
-			Response res = new Response("error", "Username or Email already taken.");
-			response.getWriter().print(res.toJson());
-			return;
-		}
-			
-		// Check that the password is long enough
+		UserTokenDaoImpl userTokenDao = new UserTokenDaoImpl();
+
+		String usernameEmail = request.getParameter("username_email");
 		String password = request.getParameter("password");
-		if (password.length() < 8) {
-			Response res = new Response("error", "Password must be at least 8 characters long.");
-			response.getWriter().print(res.toJson());
-			return;
+		User user = null;
+		if (usernameEmail.indexOf('@') == -1) {
+			// Handle as username
+			user = userDao.getByUsername(usernameEmail);
+		} else {
+			// Handle as email
+			user = userDao.getByEmail(usernameEmail);
 		}
 
-		String cname = request.getParameter("common_name");
+		if (user == null) {
+			encoder.encode(password); // prevent timing attack by hashing input
+			Response res = new Response("error", "Your input does not match our records.");
+			response.getWriter().print(res.toJson());
+			return;
+		}
+		if (!encoder.matches(password, user.getPasswordHash())) {
+			Response res = new Response("error", "Your input does not match our records.");
+			response.getWriter().print(res.toJson());
+			return;
+		}
+		// authenticated 
 		
-		// Hash the password
-		String pwHash = encoder.encode(password);
-		// Create user and store into database
-		User user = new User(uname, cname, email, pwHash);
-		boolean result = userDao.insert(user);
+		// generate token
+		byte[] arr = new byte[36]; // 36 * 8 = 288 / 6 = 48 b64 chars
+		random.nextBytes(arr);
+		String token = b64encoder.encodeToString(arr);
+		
+		// set cookie
+		Cookie cookie = new Cookie("token", token);
+		cookie.setHttpOnly(true);
+		cookie.setSecure(true);
+		cookie.setMaxAge(86400); // 60*60*24 = 1 day
+		response.addCookie(cookie);
+		
+		// store token, expiration 1 day
+		userTokenDao.insert(user.getId(), token, (System.currentTimeMillis() / 1000L) + 86400);
 		
 		Response res = new Response();
-		if (!result) {
-			res.setStatus("error");
-			res.setDescription("Failed to Add User");
-		}
 		response.getWriter().print(res.toJson());
+		return;
 	}
-	
 }

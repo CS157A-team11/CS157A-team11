@@ -1,4 +1,4 @@
-package yumster;
+package yumster.endpoints;
 
 import java.io.IOException;
 import javax.servlet.ServletException;
@@ -11,6 +11,9 @@ import javax.servlet.http.HttpServletResponse;
 
 import yumster.dao.UserDaoImpl;
 import yumster.dao.UserTokenDaoImpl;
+import yumster.obj.Response;
+import yumster.obj.User;
+import yumster.obj.UserToken;
 
 /**
  * Servlet implementation class Register

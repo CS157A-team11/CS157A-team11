@@ -1,4 +1,4 @@
-package yumster;
+package yumster.obj;
 
 public class User {
 	private transient int id;

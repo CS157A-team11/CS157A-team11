@@ -1,7 +1,7 @@
 package yumster.dao;
 
 
-import yumster.UserToken;
+import yumster.obj.UserToken;
 
 interface UserTokenDao {
 	public UserToken insert(int userId, String token, long expiration);

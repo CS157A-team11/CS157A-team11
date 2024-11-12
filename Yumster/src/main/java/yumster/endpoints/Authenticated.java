@@ -1,6 +1,7 @@
-package yumster;
+package yumster.endpoints;
 
 import java.io.IOException;
+
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
@@ -13,6 +14,9 @@ import com.google.gson.Gson;
 
 import yumster.dao.UserDaoImpl;
 import yumster.dao.UserTokenDaoImpl;
+import yumster.obj.Response;
+import yumster.obj.User;
+import yumster.obj.UserToken;
 
 /**
  * Servlet implementation class Register

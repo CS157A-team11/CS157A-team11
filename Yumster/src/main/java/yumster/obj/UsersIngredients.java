@@ -1,23 +1,23 @@
-package yumster.tables;
+package yumster.obj;
 
-public class RecipeIngredients {
-    private int recipeId;
+public class UsersIngredients {
+    private int userId;
     private int ingredientId;
 
     // Constructors
-    public RecipeIngredients(int recipeId, int ingredientId) {
+    public UsersIngredients(int userId, int ingredientId) {
         super();
-        this.recipeId = recipeId;
+        this.userId = userId;
         this.ingredientId = ingredientId;
     }
 
     // Getters and Setters
-    public int getRecipeId() {
-        return recipeId;
+    public int getUserId() {
+        return userId;
     }
 
-    public void setRecipeId(int recipeId) {
-        this.recipeId = recipeId;
+    public void setUserId(int userId) {
+        this.userId = userId;
     }
 
     public int getIngredientId() {
