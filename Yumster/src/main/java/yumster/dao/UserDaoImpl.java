@@ -1,7 +1,6 @@
 package yumster.dao;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -9,7 +8,6 @@ import java.sql.SQLException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import yumster.dao.DbConnection;
 import yumster.obj.User;
 
 public class UserDaoImpl implements UserDao {
@@ -168,7 +166,7 @@ public class UserDaoImpl implements UserDao {
 				}
 				return user;
 			} else {
-				log.error("Expected one result from getByUsername, found " + rs.getRow());
+				log.error("Expected one result from getByUsername, found none");
 				return null;
 			}
 		} catch (SQLException e) {

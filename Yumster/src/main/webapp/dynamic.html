@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Dynamic Form Generation</title>
+</head> 
+
+<body class="flex justify-center padding-8">
+	<div class="flex flex-col w-1/2">
+		<div class="flex space-x-2 my-6">
+			<p>Endpoint: </p>
+			<div class="flex">
+				<p class="text-slate-500">/api/v1/</p>
+				<input id="endpoint" class="border border-indigo-500" oninput="predictForm()"></input>
+			</div>
+		</div>
+		<div class="flex space-x-2 my-6">
+			<p>Method: </p>
+			<input id="method" class="border border-indigo-500" value="POST"></input>
+		</div>
+	   	<h1 class="text-center my-4">Dynamic Form</h1> 
+		<form id="dynamicForm" class="flex flex-col space-y-2 mb-4">
+			<button id="submitForm" type="submit" class="justify-self-end">Submit</button>
+		</form>
+		<button id="addElement" onclick="addElementToForm()">Add Element</button>
+	    <div>
+	    	<p>Result: </p>
+	    	<p id="result"></p>
+	    </div>
+    </div>  
+    <!-- Scripts -->  
+    <script>
+    	function predictForm() {
+    		var form = document.getElementById("dynamicForm");
+    	   	var endpoint = document.getElementById("endpoint").value;
+    	   	var knownEndpoints = {
+   	   			"register": {"method": "POST", "args": ["username", "email", "password", "common_name"]},
+   	   			"login": {"method": "POST", "args": ["username_email", "password"]},
+    	   		"user/change-username": {"method": "POST", "args": ["uname"]},
+    	   		"user/change-password": {"method": "POST", "args": ["password"]},
+    	   		"forgot-password": {"method": "POST", "args": ["username_email"]}
+    	   	};
+    		if (endpoint in knownEndpoints) {
+    			form.replaceChildren(document.getElementById("submitForm"));
+    			for (const val of knownEndpoints[endpoint]["args"]) {
+    				addElementToForm(val);
+    			};
+    			document.getElementById('method').value = knownEndpoints[endpoint]["method"];
+    		}
+    	}
+    	
+    	function addElementToForm(name = "") {
+    		var form = document.getElementById("dynamicForm");
+    		var div = document.createElement("div");
+    		var input1 = document.createElement("input");
+    		var sep = document.createElement("p");
+    		var input2 = document.createElement("input");
+    		div.className = "flex space-x-2";
+    		input1.className = "border border-indigo-500";
+    		input2.className = "border border-indigo-500";
+			input1.value = name;
+			
+    		sep.innerHTML = ":";
+			div.appendChild(input1);
+			div.appendChild(sep);
+    		div.appendChild(input2);
+    		form.insertBefore(div, document.getElementById("submitForm"));
+    	};
+    	
+		document.getElementById("dynamicForm").addEventListener("submit", function(e) {
+    		event.preventDefault();
+           
+    		var formChildren = document.getElementById("dynamicForm").children;
+    		for (var i = 0; i < formChildren.length; i++) {
+    			if (formChildren[i].tagName == "DIV") {
+    				formChildren[i].children[2].name = formChildren[i].children[0].value;
+    			}
+    		}
+    		
+    	   	var xhr = new XMLHttpRequest();
+    	   	var endpoint = document.getElementById('endpoint').value;
+    	   	var method = document.getElementById('method').value;
+    	   	xhr.open(method, "./api/v1/" + endpoint);
+    	   	xhr.onload = function(event) { 
+    	       	document.getElementById("result").innerHTML = event.target.response;
+    	   	}; 
+    	   	// or onerror, onabort
+    	   	var formData = new FormData(document.getElementById("dynamicForm")); 
+    	   	xhr.send(formData);
+       	});
+		
+		window.onload = function (e) {
+			predictForm();
+		}
+   </script>
+</body>  
+</html>

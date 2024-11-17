@@ -3,8 +3,6 @@ package yumster.dao;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.sql.PreparedStatement;
-import java.sql.Statement;
 
 public class DbConnection {
 	private String dbUrl = "jdbc:mysql://localhost:3306/yumster";
@@ -36,7 +34,7 @@ public class DbConnection {
 	/**
 	 * Initializes, or returns the currently open connection for the object
 	 */
-	public Connection getConnection() {
+	public synchronized Connection getConnection() {
 		if (connection == null) {
 			try {
 				loadDriver(dbDriver);

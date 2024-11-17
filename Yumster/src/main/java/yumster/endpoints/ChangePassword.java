@@ -13,7 +13,7 @@ import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 
 import yumster.dao.UserDaoImpl;
 import yumster.dao.UserTokenDaoImpl;
-import yumster.obj.Response;
+import yumster.helper.Response;
 import yumster.obj.User;
 import yumster.obj.UserToken;
 
@@ -83,6 +83,13 @@ public class ChangePassword extends HttpServlet {
 		// authenticated
 
 		String newPassword = request.getParameter("password");
+		
+		// Check that the password is long enough
+		if (newPassword.length() < 8) {
+			Response res = new Response("error", "Password must be at least 8 characters long.");
+			response.getWriter().print(res.toJson());
+			return;
+		}
 		// hash the password!
 		String hashedNewPassword = encoder.encode(newPassword);
 

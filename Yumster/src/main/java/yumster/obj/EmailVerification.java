@@ -1,16 +1,24 @@
 package yumster.obj;
 
 public class EmailVerification {
-    private int emailVerificationId;
-    private int userId;
+    private int emailVerificationId, userId;
+    private long expiration;
     private String verificationCode;
 
     // Constructors
-    public EmailVerification(int emailVerificationId, int userId, String verificationCode) {
+    public EmailVerification(int userId, String verificationCode, long expiration) {
+        super();
+        this.userId = userId;
+        this.verificationCode = verificationCode;
+        this.expiration = expiration;
+    }
+    
+    public EmailVerification(int emailVerificationId, int userId, String verificationCode, long expiration) {
         super();
         this.emailVerificationId = emailVerificationId;
         this.userId = userId;
         this.verificationCode = verificationCode;
+        this.expiration = expiration;
     }
 
     public EmailVerification() {}
@@ -39,4 +47,12 @@ public class EmailVerification {
     public void setVerificationCode(String verificationCode) {
         this.verificationCode = verificationCode;
     }
+    
+	public long getExpiration() {
+		return expiration;
+	}
+
+	public void setExpiration(long expiration) {
+		this.expiration = expiration;
+	}
 }

@@ -9,9 +9,11 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.lang3.StringUtils;
+
 import yumster.dao.UserDaoImpl;
 import yumster.dao.UserTokenDaoImpl;
-import yumster.obj.Response;
+import yumster.helper.Response;
 import yumster.obj.User;
 import yumster.obj.UserToken;
 
@@ -77,7 +79,13 @@ public class ChangeUsername extends HttpServlet {
 			return;
 		}
 		
-		String newUsername = request.getParameter("uname");
+		String newUsername = request.getParameter("uname").trim();
+		if (StringUtils.isEmpty(newUsername)) {
+			Response res = new Response("error", "Required Field not filled.");
+			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			response.getWriter().print(res.toJson());
+			return;
+		}
 	
 		if (userDao.checkExists(newUsername)) {
 			Response res = new Response("error", "Username already taken.");

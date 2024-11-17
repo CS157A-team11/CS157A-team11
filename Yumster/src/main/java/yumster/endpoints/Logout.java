@@ -9,11 +9,9 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.google.gson.Gson;
-
 import yumster.dao.UserDaoImpl;
 import yumster.dao.UserTokenDaoImpl;
-import yumster.obj.Response;
+import yumster.helper.Response;
 import yumster.obj.User;
 import yumster.obj.UserToken;
 

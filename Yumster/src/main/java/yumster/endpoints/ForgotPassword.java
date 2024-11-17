@@ -6,7 +6,6 @@ import java.security.SecureRandom;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -18,17 +17,18 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 
+import yumster.dao.EmailVerificationDaoImpl;
 import yumster.dao.UserDaoImpl;
-import yumster.dao.UserTokenDaoImpl;
+import yumster.helper.Email;
 import yumster.helper.Response;
 import yumster.obj.User;
 
 /**
  * Servlet implementation class Register
  */
-@WebServlet("/api/v1/login")
+@WebServlet("/api/v1/forgot-password")
 @MultipartConfig
-public class Login extends HttpServlet {
+public class ForgotPassword extends HttpServlet {
 	Argon2PasswordEncoder encoder = Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();
 	Encoder b64encoder = Base64.getEncoder();
     SecureRandom random = new SecureRandom();
@@ -40,7 +40,7 @@ public class Login extends HttpServlet {
 	/**
 	 * @see HttpServlet#HttpServlet()
 	 */
-	public Login() {
+	public ForgotPassword() {
 		super();
 		// TODO Auto-generated constructor stub
 	}
@@ -63,12 +63,10 @@ public class Login extends HttpServlet {
 			throws ServletException, IOException {
 		response.setContentType("application/json");
 		UserDaoImpl userDao = new UserDaoImpl();
-		UserTokenDaoImpl userTokenDao = new UserTokenDaoImpl();
+		EmailVerificationDaoImpl emailVerificationDao = new EmailVerificationDaoImpl();
 
 		String usernameEmail = request.getParameter("username_email").trim();
-		String password = request.getParameter("password").trim();
-		
-		if (StringUtils.isEmpty(usernameEmail) || StringUtils.isEmpty(password)) {
+		if (StringUtils.isEmpty(usernameEmail)) {
 			Response res = new Response("error", "Required Field not filled.");
 			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 			response.getWriter().print(res.toJson());
@@ -83,34 +81,42 @@ public class Login extends HttpServlet {
 			// Handle as email
 			user = userDao.getByEmail(usernameEmail);
 		}
-
-		if (user == null) {
-			encoder.encode(password); // prevent timing attack by hashing input
-			Response res = new Response("error", "Your input does not match our records.");
+		
+		int ENFORCED_DELAY = 120; // seconds = 2 min
+		int VALID_TIME = 900; // seconds = 15 min
+		long latestExpiration = emailVerificationDao.getLatestExpirationByUserId(user.getId());
+		if (latestExpiration == -2) {
+			Response res = new Response("error", "Internal server error.");
+			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			response.getWriter().print(res.toJson());
 			return;
 		}
-		if (!encoder.matches(password, user.getPasswordHash())) {
-			Response res = new Response("error", "Your input does not match our records.");
+		// if last token sent <2 mins ago
+		if (((System.currentTimeMillis() / 1000L) - (latestExpiration - VALID_TIME)) < ENFORCED_DELAY) {
+			Response res = new Response("error", "Please wait before trying again.");
 			response.getWriter().print(res.toJson());
 			return;
 		}
-		// authenticated 
 		
 		// generate token
 		byte[] arr = new byte[36]; // 36 * 8 = 288 / 6 = 48 b64 chars
 		random.nextBytes(arr);
 		String token = b64encoder.encodeToString(arr);
 		
-		// set cookie
-		Cookie cookie = new Cookie("token", token);
-		cookie.setHttpOnly(true);
-		cookie.setSecure(true);
-		cookie.setMaxAge(86400); // 60*60*24 = 1 day
-		response.addCookie(cookie);
+		boolean emailStatus = Email.getInstance().sendEmail(user.getCname(), user.getEmail(), "Forgot Password for: " + user.getEmail(),
+				"Hi,\n\nPlease use the following link to reset your password:\n" +
+				"<a href=http://localhost:8080/changePassword?token="+token+">Reset Password</a>\n\n" +
+				"Or copy this link into your browser:\nhttp://localhost:8080/changePassword?token="+token +
+				"\n\nRegards,\nThe Yumster Team");
 		
+		if (!emailStatus) {
+			Response res = new Response("error", "Internal server error.");
+			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			response.getWriter().print(res.toJson());
+			return;
+		}
 		// store token, expiration 1 day
-		userTokenDao.insert(user.getId(), token, (System.currentTimeMillis() / 1000L) + 86400);
+		emailVerificationDao.insert(user.getId(), token, (System.currentTimeMillis() / 1000L) + VALID_TIME);
 		
 		Response res = new Response();
 		response.getWriter().print(res.toJson());

@@ -11,10 +11,11 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 
 import yumster.dao.UserDaoImpl;
-import yumster.obj.Response;
+import yumster.helper.Response;
 import yumster.obj.User;
 
 /**
@@ -56,8 +57,18 @@ public class Register extends HttpServlet {
 		response.setContentType("application/json");
 		UserDaoImpl userDao = new UserDaoImpl();
 		
-		String uname = request.getParameter("username");
-		String email = request.getParameter("email");
+		String uname = request.getParameter("username").trim();
+		String email = request.getParameter("email").trim();
+		String password = request.getParameter("password").trim();
+		String cname = request.getParameter("common_name").trim();
+		
+		if (StringUtils.isEmpty(uname) || StringUtils.isEmpty(email) ||
+				StringUtils.isEmpty(password) || StringUtils.isEmpty(cname)) {
+			Response res = new Response("error", "Required Field not filled.");
+			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			response.getWriter().print(res.toJson());
+			return;
+		}
 		
 		// Check if username has an @ character, disallow
 		if (uname.indexOf('@') != -1) {
@@ -82,14 +93,12 @@ public class Register extends HttpServlet {
 		}
 			
 		// Check that the password is long enough
-		String password = request.getParameter("password");
 		if (password.length() < 8) {
 			Response res = new Response("error", "Password must be at least 8 characters long.");
 			response.getWriter().print(res.toJson());
 			return;
 		}
 
-		String cname = request.getParameter("common_name");
 		
 		// Hash the password
 		String pwHash = encoder.encode(password);

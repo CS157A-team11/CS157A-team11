@@ -8,9 +8,9 @@ import java.sql.SQLException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import yumster.obj.UserToken;
+import yumster.obj.EmailVerification;
 
-public class UserTokenDaoImpl implements UserTokenDao {
+public class EmailVerificationDaoImpl implements EmailVerificationDao {
     private Log log = LogFactory.getLog(UserDao.class);
 	
     /**
@@ -20,10 +20,10 @@ public class UserTokenDaoImpl implements UserTokenDao {
      * @param expiration
      * @return boolean status, success or fail
      */
-	public UserToken insert(int userId, String token, long expiration) {
+	public EmailVerification insert(int userId, String token, long expiration) {
 		DbConnection dbCon = new DbConnection();
 		Connection con = dbCon.getConnection();
-		String sql = "INSERT INTO usertokens (userToken, userId, expiration) VALUES (?,?,?);";
+		String sql = "INSERT INTO emailverification (code, userId, expirationtime) VALUES (?,?,?);";
 		try {
 			PreparedStatement ps = con.prepareStatement(sql);
 			ps.setString(1, token);
@@ -31,7 +31,7 @@ public class UserTokenDaoImpl implements UserTokenDao {
 			ps.setLong(3, expiration);
 			int res = ps.executeUpdate();
 			if (res == 1) {
-				return new UserToken(userId, token, expiration);				
+				return new EmailVerification(userId, token, expiration);				
 			}
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
@@ -43,14 +43,14 @@ public class UserTokenDaoImpl implements UserTokenDao {
 	
 	
 	/**
-     * Get UserToken by token, check if still valid
+     * Get EmailVerification by token, check if still valid
      * @param token
-     * @return UserToken, null if none valid
+     * @return EmailVerification, null if none valid
      */
-	public UserToken getByToken(String token) {
+	public EmailVerification getByToken(String token) {
 		DbConnection dbCon = new DbConnection();
 		Connection con = dbCon.getConnection();
-		String sql = "SELECT userId, expiration from usertokens WHERE userToken = ?;";
+		String sql = "SELECT userId, expirationtime from emailverification WHERE code = ?;";
 		try {
 			PreparedStatement ps = con.prepareStatement(sql);
 			ps.setString(1, token);
@@ -59,12 +59,12 @@ public class UserTokenDaoImpl implements UserTokenDao {
 				rs.next();
 				// check validity
 				if (rs.getLong(2) > (System.currentTimeMillis() / 1000L))  {
-					UserToken userToken = new UserToken(rs.getInt(1), token, rs.getLong(2));
+					EmailVerification verifToken = new EmailVerification(rs.getInt(1), token, rs.getLong(2));
 					rs.next();
 					if (rs.next()) {
 						return null;
 					}
-					return userToken;
+					return verifToken;
 				} else {
 					deleteToken(token); // invalid, remove from table //TODO decide on keeping for logs
 					return null;
@@ -78,6 +78,27 @@ public class UserTokenDaoImpl implements UserTokenDao {
 		return null;
 	}
 	
+	public long getLatestExpirationByUserId(int userId) {
+		DbConnection dbCon = new DbConnection();
+		Connection con = dbCon.getConnection();
+		String sql = "SELECT MAX(expirationtime) from emailverification WHERE userId = ?;";
+		try {
+			PreparedStatement ps = con.prepareStatement(sql);
+			ps.setInt(1, userId);
+			ResultSet rs = ps.executeQuery();
+			if (rs != null) {
+				rs.next();
+				return rs.getLong(1);
+			} else {
+				return -1;
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return -2;
+	}
+	
 	// TODO, decide if we want to invalidate using another column, for logging user access
 	/**
 	 * Delete token
@@ -87,7 +108,7 @@ public class UserTokenDaoImpl implements UserTokenDao {
 	public boolean deleteToken(String token) {
 		DbConnection dbCon = new DbConnection();
 		Connection con = dbCon.getConnection();
-		String sql = "DELETE FROM usertokens WHERE userToken = ?;";
+		String sql = "DELETE FROM emailverification WHERE code = ?;";
 		try {
 			PreparedStatement ps = con.prepareStatement(sql);
 			ps.setString(1, token);

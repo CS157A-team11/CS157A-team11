@@ -1,4 +1,4 @@
-package yumster.obj;
+package yumster.helper;
 
 import com.google.gson.Gson;
 
