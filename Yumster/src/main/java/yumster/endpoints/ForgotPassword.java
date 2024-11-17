@@ -105,8 +105,8 @@ public class ForgotPassword extends HttpServlet {
 		
 		boolean emailStatus = Email.getInstance().sendEmail(user.getCname(), user.getEmail(), "Forgot Password for: " + user.getEmail(),
 				"Hi,\n\nPlease use the following link to reset your password:\n" +
-				"<a href=http://localhost:8080/changePassword?token="+token+">Reset Password</a>\n\n" +
-				"Or copy this link into your browser:\nhttp://localhost:8080/changePassword?token="+token +
+				"<a href=http://localhost:8080/Yumster/reset-password.html?token="+token+">Reset Password</a>\n\n" +
+				"Or copy this link into your browser:\nhttp://localhost:8080/Yumster/reset-password.html?token="+token +
 				"\n\nRegards,\nThe Yumster Team");
 		
 		if (!emailStatus) {

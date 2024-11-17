@@ -9,20 +9,23 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 
+import yumster.dao.EmailVerificationDaoImpl;
 import yumster.dao.UserDaoImpl;
 import yumster.dao.UserTokenDaoImpl;
 import yumster.helper.Response;
+import yumster.obj.EmailVerification;
 import yumster.obj.User;
 import yumster.obj.UserToken;
 
 /**
- * Servlet implementation class Register
+ * Servlet implementation class Reset Password
  */
-@WebServlet("/api/v1/user/change-password")
+@WebServlet("/api/v1/user/reset-password")
 @MultipartConfig
-public class ChangePassword extends HttpServlet {
+public class ResetPassword extends HttpServlet {
 	Argon2PasswordEncoder encoder = Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();
 
 	private static final long serialVersionUID = 1L;
@@ -30,7 +33,7 @@ public class ChangePassword extends HttpServlet {
 	/**
 	 * @see HttpServlet#HttpServlet()
 	 */
-	public ChangePassword() {
+	public ResetPassword() {
 		super();
 		// TODO Auto-generated constructor stub
 	}
@@ -53,47 +56,45 @@ public class ChangePassword extends HttpServlet {
 			throws ServletException, IOException {
 		response.setContentType("application/json");
 		UserDaoImpl userDao = new UserDaoImpl();
-		UserTokenDaoImpl userTokenDao = new UserTokenDaoImpl();
+		EmailVerificationDaoImpl emailVerificationDao = new EmailVerificationDaoImpl();
 
-		Cookie[] cookies = request.getCookies();
-		if (cookies == null) {
+		String token = request.getParameter("token").trim();
+		String password = request.getParameter("password");
+
+		
+		if (StringUtils.isEmpty(token) || StringUtils.isEmpty(password)) {
+			Response res = new Response("error", "Required Field not filled.");
+			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			response.getWriter().print(res.toJson());
+			return;
+		}
+		
+		EmailVerification emailVerification = emailVerificationDao.getByToken(token);
+		
+		if (emailVerification == null) {
 			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 			Response res = new Response("error", "Unauthenticated");
 			response.getWriter().print(res.toJson());
 			return;
 		}
-		User user = null;
-		for (int i = 0; i < cookies.length; i++) {
-			String name = cookies[i].getName();
-			String value = cookies[i].getValue();
-
-			if (name == "token") {
-				UserToken userToken = userTokenDao.getByToken(value);
-				if (userToken != null) {
-					user = userDao.getById(userToken.getUserId()); // here because scoping
-				} 
-			}
-		}
-		if (user == null) {
-			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-			Response res = new Response("error", "Unauthenticated");
-			response.getWriter().print(res.toJson());
-			return;
-		}
-		// authenticated
-
-		String newPassword = request.getParameter("password");
+		
+		// Token is valid.
+		
+		User user = userDao.getById(emailVerification.getUserId());
 		
 		// Check that the password is long enough
-		if (newPassword.length() < 8) {
+		if (password.length() < 8) {
 			Response res = new Response("error", "Password must be at least 8 characters long.");
 			response.getWriter().print(res.toJson());
 			return;
 		}
 		// hash the password!
-		String hashedNewPassword = encoder.encode(newPassword);
+		String hashedNewPassword = encoder.encode(password);
 
 		boolean result = userDao.updatePassword(hashedNewPassword, user);
+		
+		// delete the token, single use only
+		emailVerificationDao.deleteToken(token);
 
 		Response res = new Response();
 		if (!result) {

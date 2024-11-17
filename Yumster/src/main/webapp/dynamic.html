@@ -36,11 +36,13 @@
     		var form = document.getElementById("dynamicForm");
     	   	var endpoint = document.getElementById("endpoint").value;
     	   	var knownEndpoints = {
+    	   		"authenticated": {"method": "GET", "args": []},
    	   			"register": {"method": "POST", "args": ["username", "email", "password", "common_name"]},
    	   			"login": {"method": "POST", "args": ["username_email", "password"]},
     	   		"user/change-username": {"method": "POST", "args": ["uname"]},
     	   		"user/change-password": {"method": "POST", "args": ["password"]},
-    	   		"forgot-password": {"method": "POST", "args": ["username_email"]}
+    	   		"forgot-password": {"method": "POST", "args": ["username_email"]},
+    	   		"user/reset-password": {"method": "POST", "args": ["token", "password"]}
     	   	};
     		if (endpoint in knownEndpoints) {
     			form.replaceChildren(document.getElementById("submitForm"));
