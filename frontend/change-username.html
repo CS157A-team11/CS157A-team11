@@ -26,30 +26,54 @@
         .feedback.red {
             color: red;
         }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .alert {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1001;
+            min-width: 300px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
+
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
 
 <div class="container">
     <div class="card">
         <div class="card-body">
             <h4 class="card-title text-center">Change Username</h4>
-            <form id="username-form" onsubmit="return false;">
-                <!-- Current Username -->
+            <form id="username-form" method="post">
                 <div class="mb-3">
                     <label for="current-username" class="form-label">Current Username</label>
-                    <input type="text" class="form-control" id="current-username" placeholder="Current username">
+                    <input type="text" class="form-control" id="current-username" name="current_username" required>
                 </div>
-                <!-- New Username -->
                 <div class="mb-3">
                     <label for="new-username" class="form-label">New Username</label>
-                    <input type="text" class="form-control" id="new-username" placeholder="New username" oninput="validateUsername()">
+                    <input type="text" class="form-control" id="new-username" name="new_username" required>
                     <div id="username-feedback" class="feedback"></div>
                 </div>
-                <!-- Buttons -->
                 <div class="text-center">
-                    <button type="button" id="change-btn" class="btn btn-primary" onclick="changeUsername()" disabled>Change Username</button>
-                    <a href="home.html" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" id="change-btn" class="btn btn-primary">Change Username</button>
+                    <button type="button" class="btn btn-secondary" onclick="handleCancel()">Cancel</button>
                 </div>
             </form>
         </div>
@@ -57,80 +81,82 @@
 </div>
 
 <script>
-    // Backend API Endpoints
-    const CHECK_USERNAME_API = "https://example.com/api/check-username"; // Replace with your backend URL
-    const UPDATE_USERNAME_API = "https://example.com/api/update-username"; // Replace with your backend URL
-
-    async function validateUsername() {
-        const newUsernameInput = document.getElementById("new-username");
-        const feedback = document.getElementById("username-feedback");
-        const changeBtn = document.getElementById("change-btn");
-        const newUsername = newUsernameInput.value.trim();
-
-        if (newUsername === "") {
-            feedback.textContent = "";
-            changeBtn.disabled = true;
-            return;
-        }
-
-        // Call backend to check username availability
+    // Get return URL from query parameters
+    const returnUrl = new URLSearchParams(window.location.search).get('returnUrl') || 'home.html';
+    
+    // Check authentication on page load
+    async function checkAuth() {
         try {
-            const response = await fetch(CHECK_USERNAME_API, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ username: newUsername }),
+            const response = await fetch('./api/v1/auth/check', {
+                credentials: 'include'
             });
-
-            const result = await response.json();
-
-            if (response.ok && result.available) {
-                feedback.textContent = "Username available ✓";
-                feedback.className = "feedback green";
-                changeBtn.disabled = false;
-            } else {
-                feedback.textContent = "Username already taken";
-                feedback.className = "feedback red";
-                changeBtn.disabled = true;
+            const data = await response.json();
+            if (!data.authenticated) {
+                window.location.href = `login.html?returnUrl=${encodeURIComponent(window.location.href)}`;
             }
         } catch (error) {
-            feedback.textContent = "Error checking username. Please try again.";
-            feedback.className = "feedback red";
-            changeBtn.disabled = true;
+            showError("Authentication failed");
+            setTimeout(() => window.location.href = "login.html", 2000);
         }
     }
 
-    async function changeUsername() {
-        const currentUsername = document.getElementById("current-username").value.trim();
-        const newUsername = document.getElementById("new-username").value.trim();
+    function toggleLoading(show) {
+        document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+    }
 
-        if (currentUsername === "" || newUsername === "") {
-            alert("Please fill in both fields.");
-            return;
-        }
+    function showError(message) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'alert alert-danger';
+        errorDiv.textContent = message;
+        document.body.appendChild(errorDiv);
+        setTimeout(() => errorDiv.remove(), 3000);
+    }
+
+    function showSuccess(message) {
+        const successDiv = document.createElement('div');
+        successDiv.className = 'alert alert-success';
+        successDiv.textContent = message;
+        document.body.appendChild(successDiv);
+        setTimeout(() => successDiv.remove(), 3000);
+    }
+
+    // Form submission handler
+    document.getElementById('username-form').addEventListener('submit', async function(event) {
+        event.preventDefault();
+        toggleLoading(true);
 
         try {
-            const response = await fetch(UPDATE_USERNAME_API, {
-                method: "POST",
+            const formData = new FormData(this);
+            const response = await fetch('./api/v1/username/update', {
+                method: 'POST',
                 headers: {
-                    "Content-Type": "application/json",
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
                 },
-                body: JSON.stringify({ currentUsername, newUsername }),
+                credentials: 'include',
+                body: formData
             });
 
-            const result = await response.json();
-
-            if (response.ok && result.success) {
-                alert(`Username successfully changed from ${currentUsername} to ${newUsername}`);
-                window.location.href = "home.html"; // Redirect to home page
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                showSuccess("Username updated successfully!");
+                setTimeout(() => window.location.href = returnUrl, 1500);
             } else {
-                alert(result.message || "Error updating username. Please try again.");
+                showError(data.message || "Failed to update username");
             }
         } catch (error) {
-            alert("Error updating username. Please try again.");
+            showError("An error occurred. Please try again.");
+        } finally {
+            toggleLoading(false);
         }
+    });
+
+    function handleCancel() {
+        window.location.href = returnUrl;
     }
+
+    // Initialize page
+    checkAuth();
 </script>
 
 </body>
