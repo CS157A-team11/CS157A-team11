@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dietary Restrictions</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .container { margin-top: 50px; }
+        .card { border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
+        .btn-skip { background-color: #6c757d; color: white; }
+        .btn-skip:hover { background-color: #5a6268; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card mb-4">
+        <div class="card-body">
+            <h4 class="card-title">Dietary Restrictions</h4>
+            <form id="dietary-form">
+                <div class="mb-3">
+                    <label for="dietaryRestrictions" class="form-label">Please specify any dietary restrictions:</label>
+                    <input type="text" class="form-control" id="dietaryRestrictions" placeholder="e.g., Lactose Intolerance, Gluten-Free">
+                </div>
+                <div class="text-center">
+                    <button type="button" class="btn btn-primary" onclick="nextPage()">Next</button>
+                    <a href="favorites.html" class="btn btn-skip">Skip This Page</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function nextPage() {
+        window.location.href = "favorites.html";
+    }
+</script>
+
+</body>
+</html>
