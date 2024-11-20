@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rate This Recipe</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .container {
+            margin-top: 50px;
+            text-align: center;
+        }
+        .stars {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+        .star {
+            font-size: 4rem;
+            color: #ddd;
+            transition: color 0.3s ease, transform 0.2s ease;
+            filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.2));
+        }
+        .star:hover {
+            transform: scale(1.1);
+        }
+        .star-filled {
+            color: #ffc107;
+        }
+        .rating-text {
+            font-size: 1.5rem;
+            margin-top: 20px;
+        }
+        .btn-done {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-done:hover {
+            background-color: #0056b3;
+        }
+        .btn-cancel {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-cancel:hover {
+            background-color: #5a6268;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Rate This Recipe</h1>
+
+    <!-- Rating Stars -->
+    <div class="stars mt-4" id="stars-container">
+        <!-- Stars will be dynamically added here -->
+    </div>
+
+    <!-- Rating Value -->
+    <p class="rating-text" id="rating-value">You rated: <span id="rating-number">0</span></p>
+
+    <!-- Buttons -->
+    <div class="mt-4">
+        <button id="done-btn" class="btn btn-done hidden" onclick="submitRating()">Done</button>
+        <a href="home.html" class="btn btn-cancel">Cancel</a>
+    </div>
+</div>
+
+<script>
+    const starsContainer = document.getElementById("stars-container");
+    const ratingNumber = document.getElementById("rating-number");
+    const doneButton = document.getElementById("done-btn");
+
+    let currentRating = 0;
+
+    // Create 5 stars dynamically
+    for (let i = 0; i < 5; i++) {
+        const star = document.createElement("span");
+        star.classList.add("star");
+        star.innerHTML = "&#9733;"; // Star symbol
+
+        // Star hover and click behavior
+        star.addEventListener("mouseover", () => fillStars(i + 1));
+        star.addEventListener("mouseout", () => fillStars(currentRating));
+        star.addEventListener("click", () => setRating(i + 1));
+
+        starsContainer.appendChild(star);
+    }
+
+    // Function to fill stars up to the given rating
+    function fillStars(rating) {
+        const stars = starsContainer.children;
+        for (let i = 0; i < stars.length; i++) {
+            stars[i].classList.remove("star-filled");
+        }
+
+        for (let i = 0; i < rating; i++) {
+            stars[i].classList.add("star-filled");
+        }
+    }
+
+    // Function to set the rating
+    function setRating(rating) {
+        currentRating = rating;
+        fillStars(rating);
+        ratingNumber.textContent = rating;
+        doneButton.classList.remove("hidden");
+    }
+
+    // Function to submit the rating
+    function submitRating() {
+        alert(`You rated this recipe ${currentRating} stars!`);
+        window.location.href = "home.html"; // Redirect to home after submitting
+    }
+</script>
+
+</body>
+</html>
