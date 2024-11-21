@@ -11,7 +11,7 @@ import org.apache.commons.logging.LogFactory;
 import yumster.obj.User;
 
 public class UserDaoImpl implements UserDao {
-    private Log log = LogFactory.getLog(UserDao.class);
+    private Log log = LogFactory.getLog(UserDaoImpl.class);
 	
     /**
      * Insert a new user into the database
@@ -35,7 +35,7 @@ public class UserDaoImpl implements UserDao {
 			return false;
 		}
 		return true;
-	}
+	};
 	
 	/**
 	 * Checks if a username or email is taken/user exists with that data.
@@ -62,7 +62,7 @@ public class UserDaoImpl implements UserDao {
 			e.printStackTrace();
 		}
 		return false;
-	}
+	};
 	
 	/**
 	 * Gets user by userid
@@ -96,7 +96,7 @@ public class UserDaoImpl implements UserDao {
 			e.printStackTrace();
 			return null;
 		}
-	}
+	};
 	
 	/**
 	 * Gets user by email
@@ -112,8 +112,7 @@ public class UserDaoImpl implements UserDao {
 			PreparedStatement ps = con.prepareStatement(sql);
 			ps.setString(1, email);
 			ResultSet rs = ps.executeQuery();
-			if (rs != null) {
-				rs.next();
+			if (rs.next()) {
 				User user = new User();
 				user.setId(rs.getInt(1));
 				user.setUname(rs.getString(2));
@@ -135,7 +134,7 @@ public class UserDaoImpl implements UserDao {
 			e.printStackTrace();
 			return null;
 		}
-	}
+	};
 	
 	/**
 	 * Gets user by username
@@ -174,7 +173,7 @@ public class UserDaoImpl implements UserDao {
 			e.printStackTrace();
 			return null;
 		}
-	}
+	};
 	
 	public boolean updateUsername(String username, int userId) {
 	    DbConnection dbCon = new DbConnection();
@@ -195,7 +194,7 @@ public class UserDaoImpl implements UserDao {
 	        e.printStackTrace();
 	        return false;
 	    }
-	}
+	};
 
 	public boolean updatePassword(String newPasswordHash, int userId) {
 	    DbConnection dbCon = new DbConnection();
@@ -218,6 +217,6 @@ public class UserDaoImpl implements UserDao {
 	        e.printStackTrace();
 	        return false;
 	    }
-	}
+	};
 
 }

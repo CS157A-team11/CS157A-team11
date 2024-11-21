@@ -1,15 +1,17 @@
 package yumster.obj;
 
-public class Recipes {
+import com.google.gson.annotations.Expose;
+
+public class Recipe {
     private int recipeId;
-    private String name;
-    private String instructions;
-    private int time;
-    private int servings;
+    @Expose private String name;
+    @Expose private String instructions;
+    @Expose private int time;
+    @Expose private int servings;
     private int userId;
 
     // Constructors
-    public Recipes(int recipeId, String name, String instructions, int time, int servings, int userId) {
+    public Recipe(int recipeId, String name, String instructions, int time, int servings, int userId) {
         super();
         this.recipeId = recipeId;
         this.name = name;
@@ -19,7 +21,7 @@ public class Recipes {
         this.userId = userId;
     }
 
-    public Recipes() {}
+    public Recipe() {}
 
     // Getters and Setters
     public int getRecipeId() {

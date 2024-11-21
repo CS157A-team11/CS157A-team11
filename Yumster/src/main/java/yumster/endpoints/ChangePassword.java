@@ -11,6 +11,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 
+import yumster.dao.UserDao;
+import yumster.dao.UserTokenDao;
 import yumster.dao.UserDaoImpl;
 import yumster.dao.UserTokenDaoImpl;
 import yumster.helper.Response;
@@ -52,8 +54,8 @@ public class ChangePassword extends HttpServlet {
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		response.setContentType("application/json");
-		UserDaoImpl userDao = new UserDaoImpl();
-		UserTokenDaoImpl userTokenDao = new UserTokenDaoImpl();
+		UserDao userDao = new UserDaoImpl();
+		UserTokenDao userTokenDao = new UserTokenDaoImpl();
 
 		Cookie[] cookies = request.getCookies();
 		if (cookies == null) {
@@ -67,7 +69,7 @@ public class ChangePassword extends HttpServlet {
 			String name = cookies[i].getName();
 			String value = cookies[i].getValue();
 
-			if (name == "token") {
+			if (name.equals("token")) {
 				UserToken userToken = userTokenDao.getByToken(value);
 				if (userToken != null) {
 					user = userDao.getById(userToken.getUserId()); // here because scoping

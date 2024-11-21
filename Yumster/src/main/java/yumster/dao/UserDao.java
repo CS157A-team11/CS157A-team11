@@ -2,7 +2,7 @@ package yumster.dao;
 
 import yumster.obj.User;
 
-interface UserDao {
+public interface UserDao {
 	public boolean insert(User user);
 	
 	/**
@@ -15,6 +15,8 @@ interface UserDao {
 	};
 	
 	public boolean checkExists(String email, String username);
+	
+	public User getById(int userId);
 	
 	public User getByEmail(String email);
 	
