@@ -6,9 +6,16 @@
     <title>Email Confirmation</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f8f9fa; }
-        .container { margin-top: 50px; }
-        .card { border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
+        body { 
+            background-color: #f8f9fa; 
+        }
+        .container { 
+            margin-top: 50px; 
+        }
+        .card { 
+            border-radius: 10px; 
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); 
+        }
         .success-animation {
             display: none;
             text-align: center;
@@ -17,57 +24,154 @@
         }
         .resend-message {
             display: none;
-            color: #d9534f; /* Red color */
+            color: #d9534f;
             font-size: 1rem;
             text-align: center;
             margin-top: 10px;
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .alert {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1001;
+            min-width: 300px;
+            text-align: center;
         }
     </style>
 </head>
 <body>
 
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+
 <div class="container">
     <div class="card mb-4">
         <div class="card-body">
             <h4 class="card-title text-center">Confirm Your Email</h4>
-            <p class="text-center">Thank you for signing up! Please check your inbox for a confirmation email from us.</p>
+            <p class="text-center">Thank you for signing up! Please check your inbox for a confirmation email.</p>
             <p class="text-center">Once confirmed, you'll be able to personalize your experience!</p>
             <div class="text-center">
-                <!-- Resend Confirmation Email Button -->
-                <a href="#" class="btn btn-primary" onclick="showResendMessage()">Resend Confirmation Email</a>
+                <button class="btn btn-primary" onclick="resendConfirmationEmail()">Resend Confirmation Email</button>
             </div>
-            <!-- Resend Message -->
             <p id="resend-message" class="resend-message">Email sent, please verify.</p>
         </div>
     </div>
 
-    <!-- Success Animation for Email Confirmation -->
     <div id="success-animation" class="success-animation">
         <span>✔ Email Confirmed</span>
     </div>
 </div>
 
 <script>
-    // Show the resend message when "Resend Confirmation Email" is clicked
-    function showResendMessage() {
-        const message = document.getElementById("resend-message");
-        message.style.display = "block";
-        setTimeout(() => {
-            message.style.display = "none";
-        }, 2000); // Hide after 2 seconds
+    // Check authentication on page load
+    async function checkAuth() {
+        try {
+            const response = await fetch('./api/v1/auth/check', {
+                credentials: 'include'
+            });
+            const data = await response.json();
+            if (!data.authenticated) {
+                window.location.href = 'LoginPage.html';
+            }
+        } catch (error) {
+            showError("Authentication failed");
+            setTimeout(() => window.location.href = "LoginPage.html", 2000);
+        }
     }
 
-    // Automatically start the confirmation animation and redirect after 5 seconds
-    window.onload = function() {
-        setTimeout(() => {
-            // Display the success animation
-            document.getElementById("success-animation").style.display = "block";
+    function toggleLoading(show) {
+        document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+    }
 
-            // Redirect to the next page after animation
-            setTimeout(() => {
-                window.location.href = "dietary-restrictions.html";
-            }, 1000); // 1-second delay after animation
-        }, 4000); // Initial 4-second delay on page load
+    function showError(message) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'alert alert-danger';
+        errorDiv.textContent = message;
+        document.body.appendChild(errorDiv);
+        setTimeout(() => errorDiv.remove(), 3000);
+    }
+
+    function showSuccess(message) {
+        const successDiv = document.createElement('div');
+        successDiv.className = 'alert alert-success';
+        successDiv.textContent = message;
+        document.body.appendChild(successDiv);
+        setTimeout(() => successDiv.remove(), 3000);
+    }
+
+    async function resendConfirmationEmail() {
+        try {
+            toggleLoading(true);
+            const response = await fetch('./api/v1/email/resend', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                },
+                credentials: 'include'
+            });
+
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                const message = document.getElementById("resend-message");
+                message.style.display = "block";
+                setTimeout(() => {
+                    message.style.display = "none";
+                }, 2000);
+            } else {
+                showError(data.message || "Failed to resend confirmation email");
+            }
+        } catch (error) {
+            showError("Failed to resend confirmation email");
+        } finally {
+            toggleLoading(false);
+        }
+    }
+
+    async function checkEmailConfirmation() {
+        try {
+            const response = await fetch('./api/v1/email/status', {
+                credentials: 'include'
+            });
+            const data = await response.json();
+            
+            if (data.confirmed) {
+                document.getElementById("success-animation").style.display = "block";
+                setTimeout(() => {
+                    window.location.href = "dietary-restrictions.html";
+                }, 1000);
+            }
+        } catch (error) {
+            showError("Failed to check email confirmation status");
+        }
+    }
+
+    // Initialize page
+    checkAuth();
+    
+    // Check email confirmation status every 5 seconds
+    const confirmationCheck = setInterval(checkEmailConfirmation, 5000);
+
+    // Cleanup interval on page unload
+    window.onunload = function() {
+        clearInterval(confirmationCheck);
     };
 </script>
 
