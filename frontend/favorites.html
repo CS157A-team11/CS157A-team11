@@ -6,43 +6,244 @@
     <title>Favorites</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f8f9fa; }
-        .container { margin-top: 50px; }
-        .card { border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
-        .btn-skip { background-color: #6c757d; color: white; }
-        .btn-skip:hover { background-color: #5a6268; }
+        body { 
+            background-color: #f8f9fa; 
+        }
+        .container { 
+            margin-top: 50px; 
+        }
+        .card { 
+            border-radius: 10px; 
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); 
+        }
+        .btn-skip { 
+            background-color: #6c757d; 
+            color: white; 
+        }
+        .btn-skip:hover { 
+            background-color: #5a6268; 
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .alert {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1001;
+            min-width: 300px;
+            text-align: center;
+        }
+        .favorite-tag {
+            display: inline-block;
+            background: #e9ecef;
+            padding: 5px 10px;
+            margin: 5px;
+            border-radius: 15px;
+            cursor: pointer;
+        }
+        .favorite-tag .remove-btn {
+            margin-left: 5px;
+            color: #dc3545;
+            cursor: pointer;
+        }
+        .alert-danger {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
     </style>
 </head>
 <body>
-
-<div class="container">
-    <div class="card mb-4">
-        <div class="card-body">
-            <h4 class="card-title">Favorites</h4>
-            <form id="favorites-form">
-                <div class="mb-3">
-                    <label for="favoriteRecipes" class="form-label">Favorite Recipes:</label>
-                    <input type="text" class="form-control" id="favoriteRecipes" placeholder="e.g., Spaghetti Bolognese">
-                </div>
-                <div class="mb-3">
-                    <label for="favoriteIngredients" class="form-label">Favorite Ingredients:</label>
-                    <input type="text" class="form-control" id="favoriteIngredients" placeholder="e.g., Tomato, Basil">
-                </div>
-                <div class="text-center">
-                    <button type="button" class="btn btn-primary" onclick="nextPage()">Next</button>
-                    <a href="dietary-restrictions.html" class="btn btn-secondary">Previous</a>
-                    <a href="cooking-methods.html" class="btn btn-skip">Skip This Page</a>
-                </div>
-            </form>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
         </div>
     </div>
-</div>
 
-<script>
-    function nextPage() {
-        window.location.href = "cooking-methods.html";
-    }
-</script>
+    <div class="container">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4 class="card-title">Favorites</h4>
+                <form id="favorites-form" method="post">
+                    <!-- Favorite Recipes -->
+                    <div class="mb-3">
+                        <label for="favoriteRecipes" class="form-label">Favorite Recipes:</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="favoriteRecipes" placeholder="e.g., Spaghetti Bolognese">
+                            <button type="button" class="btn btn-primary" onclick="addFavoriteRecipe()">Add</button>
+                        </div>
+                        <div id="favorite-recipes-list" class="mt-2"></div>
+                    </div>
+
+                    <!-- Favorite Ingredients -->
+                    <div class="mb-3">
+                        <label for="favoriteIngredients" class="form-label">Favorite Ingredients:</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="favoriteIngredients" placeholder="e.g., Tomato, Basil">
+                            <button type="button" class="btn btn-primary" onclick="addFavoriteIngredient()">Add</button>
+                        </div>
+                        <div id="favorite-ingredients-list" class="mt-2"></div>
+                    </div>
+
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary">Next</button>
+                        <button type="button" class="btn btn-secondary" onclick="goBack()">Previous</button>
+                        <button type="button" class="btn btn-skip" onclick="skipPage()">Skip This Page</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function checkAuth() {
+            try {
+                const response = await fetch('./api/v1/auth/check', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                if (!data.authenticated) {
+                    window.location.href = 'LoginPage.html?returnUrl=' + encodeURIComponent(window.location.href);
+                } else {
+                    await loadUserFavorites();
+                }
+            } catch (error) {
+                showError("Authentication failed");
+                setTimeout(() => window.location.href = "LoginPage.html", 2000);
+            }
+        }
+
+        function toggleLoading(show) {
+            document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+        }
+
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'alert alert-danger';
+            errorDiv.textContent = message;
+            document.body.appendChild(errorDiv);
+            setTimeout(() => errorDiv.remove(), 3000);
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.createElement('div');
+            successDiv.className = 'alert alert-success';
+            successDiv.textContent = message;
+            document.body.appendChild(successDiv);
+            setTimeout(() => successDiv.remove(), 3000);
+        }
+
+        async function loadUserFavorites() {
+            try {
+                toggleLoading(true);
+                const response = await fetch('./api/v1/favorites', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    data.recipes.forEach(recipe => addFavoriteTag('favorite-recipes-list', recipe));
+                    data.ingredients.forEach(ingredient => addFavoriteTag('favorite-ingredients-list', ingredient));
+                }
+            } catch (error) {
+                showError("Failed to load favorites");
+            } finally {
+                toggleLoading(false);
+            }
+        }
+
+        function addFavoriteTag(listId, value) {
+            const list = document.getElementById(listId);
+            const tag = document.createElement('span');
+            tag.className = 'favorite-tag';
+            tag.innerHTML = `${value}<span class="remove-btn" onclick="removeTag(this)">×</span>`;
+            list.appendChild(tag);
+        }
+
+        function addFavoriteRecipe() {
+            const input = document.getElementById('favoriteRecipes');
+            if (input.value.trim()) {
+                addFavoriteTag('favorite-recipes-list', input.value.trim());
+                input.value = '';
+            }
+        }
+
+        function addFavoriteIngredient() {
+            const input = document.getElementById('favoriteIngredients');
+            if (input.value.trim()) {
+                addFavoriteTag('favorite-ingredients-list', input.value.trim());
+                input.value = '';
+            }
+        }
+
+        function removeTag(element) {
+            element.parentElement.remove();
+        }
+
+        document.getElementById('favorites-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            try {
+                toggleLoading(true);
+
+                const favoritesData = {
+                    recipes: Array.from(document.querySelectorAll('#favorite-recipes-list .favorite-tag'))
+                        .map(tag => tag.textContent.slice(0, -1)),
+                    ingredients: Array.from(document.querySelectorAll('#favorite-ingredients-list .favorite-tag'))
+                        .map(tag => tag.textContent.slice(0, -1))
+                };
+
+                const response = await fetch('./api/v1/favorites/update', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(favoritesData)
+                });
+
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showSuccess("Favorites saved successfully!");
+                    setTimeout(() => window.location.href = "cooking-methods.html", 1500);
+                } else {
+                    showError(data.message || "Failed to save favorites");
+                }
+            } catch (error) {
+                showError("An error occurred while saving favorites");
+            } finally {
+                toggleLoading(false);
+            }
+        });
+
+        function goBack() {
+            window.location.href = "dietary-restrictions.html";
+        }
+
+        function skipPage() {
+            window.location.href = "cooking-methods.html";
+        }
+
+        // Initialize page
+        checkAuth();
+    </script>
 
 </body>
 </html>
