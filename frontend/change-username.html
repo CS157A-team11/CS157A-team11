@@ -47,6 +47,23 @@
             min-width: 300px;
             text-align: center;
         }
+
+        .alert-danger {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+
+
     </style>
 </head>
 <body>
@@ -82,74 +99,113 @@
 
 <script>
     // Get return URL from query parameters
-    const returnUrl = new URLSearchParams(window.location.search).get('returnUrl') || 'home.html';
-    
-    // Check authentication on page load
-    async function checkAuth() {
-        try {
-            const response = await fetch('./api/v1/auth/check', {
-                credentials: 'include'
-            });
-            const data = await response.json();
-            if (!data.authenticated) {
-                window.location.href = `login.html?returnUrl=${encodeURIComponent(window.location.href)}`;
+            const returnUrl = new URLSearchParams(window.location.search).get('returnUrl') || 'home.html';
+        
+        async function checkAuth() {
+            try {
+                const response = await fetch('./api/v1/auth/check', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                if (!data.authenticated) {
+                    window.location.href = `LoginPage.html?returnUrl=${encodeURIComponent(window.location.href)}`;
+                } else {
+                    await loadCurrentUsername();
+                }
+            } catch (error) {
+                showError("Authentication failed");
+                setTimeout(() => window.location.href = "LoginPage.html", 2000);
             }
-        } catch (error) {
-            showError("Authentication failed");
-            setTimeout(() => window.location.href = "login.html", 2000);
         }
-    }
 
-    function toggleLoading(show) {
-        document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
-    }
+        async function loadCurrentUsername() {
+            try {
+                toggleLoading(true);
+                const response = await fetch('./api/v1/user/profile', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    document.getElementById('current-username').value = data.username;
+                }
+            } catch (error) {
+                showError("Failed to load current username");
+            } finally {
+                toggleLoading(false);
+            }
+        }
 
-    function showError(message) {
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'alert alert-danger';
-        errorDiv.textContent = message;
-        document.body.appendChild(errorDiv);
-        setTimeout(() => errorDiv.remove(), 3000);
-    }
+        async function validateNewUsername(username) {
+            try {
+                const response = await fetch('./api/v1/username/check', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ username })
+                });
+                
+                const data = await response.json();
+                const feedback = document.getElementById('username-feedback');
+                const changeBtn = document.getElementById('change-btn');
+                
+                if (data.available) {
+                    feedback.textContent = "Username available ✓";
+                    feedback.className = "feedback green";
+                    changeBtn.disabled = false;
+                } else {
+                    feedback.textContent = "Username already taken";
+                    feedback.className = "feedback red";
+                    changeBtn.disabled = true;
+                }
+            } catch (error) {
+                showError("Error checking username availability");
+            }
+        }
 
-    function showSuccess(message) {
-        const successDiv = document.createElement('div');
-        successDiv.className = 'alert alert-success';
-        successDiv.textContent = message;
-        document.body.appendChild(successDiv);
-        setTimeout(() => successDiv.remove(), 3000);
-    }
-
-    // Form submission handler
-    document.getElementById('username-form').addEventListener('submit', async function(event) {
-        event.preventDefault();
-        toggleLoading(true);
-
-        try {
-            const formData = new FormData(this);
-            const response = await fetch('./api/v1/username/update', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
-                },
-                credentials: 'include',
-                body: formData
-            });
-
-            const data = await response.json();
-            
-            if (data.status === 'success') {
-                showSuccess("Username updated successfully!");
-                setTimeout(() => window.location.href = returnUrl, 1500);
+        document.getElementById('new-username').addEventListener('input', function() {
+            const username = this.value.trim();
+            if (username.length >= 3) {
+                validateNewUsername(username);
             } else {
-                showError(data.message || "Failed to update username");
+                document.getElementById('username-feedback').textContent = "";
+                document.getElementById('change-btn').disabled = true;
             }
-        } catch (error) {
-            showError("An error occurred. Please try again.");
-        } finally {
-            toggleLoading(false);
-        }
-    });
+        });
+
+        document.getElementById('username-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            toggleLoading(true);
+
+            try {
+                const formData = new FormData(this);
+                const response = await fetch('./api/v1/username/update', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    credentials: 'include',
+                    body: formData
+                });
+
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    sessionStorage.setItem('username', data.newUsername);
+                    showSuccess("Username updated successfully!");
+                    setTimeout(() => window.location.href = returnUrl, 1500);
+                } else {
+                    showError(data.message || "Failed to update username");
+                }
+            } catch (error) {
+                showError("An error occurred. Please try again.");
+            } finally {
+                toggleLoading(false);
+            }
+        });
 
     function handleCancel() {
         window.location.href = returnUrl;
