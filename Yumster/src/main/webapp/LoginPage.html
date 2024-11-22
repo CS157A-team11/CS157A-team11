@@ -66,13 +66,62 @@
             top: 10px;
             cursor: pointer;
         }
+        /* New styles for enhanced functionality */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .alert {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1001;
+            min-width: 300px;
+            text-align: center;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .alert-danger {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
     </style>
 </head>
 <body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
     <div class="login-container">
         <h1 class="text-center mb-4">Yumster!</h1>
         <h4 class="text-center mb-4">Login</h4>
-        <form id="loginForm" action="./api/v1/login" method="post">
+        <form id="loginForm" method="post">
             <div class="form-group">
                 <input type="text" class="form-control" id="usernameEmail" name="username_email" placeholder=" " required>
                 <label for="usernameEmail">Username or Email</label>
@@ -92,9 +141,20 @@
     </div>
 
     <script>
+        function toggleLoading(show) {
+            document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+        }
+
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'alert alert-danger';
+            errorDiv.textContent = message;
+            document.body.appendChild(errorDiv);
+            setTimeout(() => errorDiv.remove(), 3000);
+        }
+
         document.querySelector('.toggle-password').addEventListener('click', function() {
             const passwordField = document.getElementById('password');
-            
             if (passwordField.type === 'password') {
                 passwordField.type = 'text';
                 this.textContent = '🙈';
@@ -104,30 +164,42 @@
             }
         });
 
-        document.getElementById('loginForm').addEventListener('submit', function(event) {
-           const password = document.getElementById('password').value;
-           const passwordError = document.getElementById('passwordError');
-           event.preventDefault();
+        document.getElementById('loginForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            toggleLoading(true);
 
-           if (password.length < 8) {
-               passwordError.textContent = 'Password incorrect.';
-           } else {
-               passwordError.textContent = '';
-           }
-           
-           var xhr = new XMLHttpRequest();
-    	   xhr.open("POST", "./api/v1/login");
-    	   xhr.onload = function(event) { 
-    	       if (JSON.parse(event.target.response).status == "success") {
-    	    	   window.location.href = "LoginSuccess.html";
-    	       } else {
-    	    	   alert("Error: " + event.target.response);
-    	       }; 
-    	   }; 
-    	   // or onerror, onabort
-    	   var formData = new FormData(document.getElementById("loginForm")); 
-    	   xhr.send(formData);
-       });
+            try {
+                const formData = new FormData(this);
+                const response = await fetch('./api/v1/login', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    credentials: 'include',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.status === "success") {
+                    // Store user context
+                    sessionStorage.setItem('username', data.username);
+                    sessionStorage.setItem('userId', data.userId);
+                    
+                    // Check for redirect URL
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const redirectUrl = urlParams.get('redirect') || 'LoginSuccess.html';
+                    
+                    window.location.href = redirectUrl;
+                } else {
+                    showError(data.message || "Login failed. Please check your credentials.");
+                }
+            } catch (error) {
+                showError("An error occurred during login. Please try again.");
+            } finally {
+                toggleLoading(false);
+            }
+        });
     </script>
 
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
