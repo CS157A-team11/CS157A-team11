@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Confirmation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { 
+            background-color: #f8f9fa; 
+        }
+        .container { 
+            margin-top: 50px; 
+        }
+        .card { 
+            border-radius: 10px; 
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); 
+        }
+        .success-animation {
+            display: none;
+            text-align: center;
+            font-size: 2rem;
+            color: green;
+        }
+        .resend-message {
+            display: none;
+            color: #d9534f;
+            font-size: 1rem;
+            text-align: center;
+            margin-top: 10px;
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .alert {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1001;
+            min-width: 300px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+
+<div class="container">
+    <div class="card mb-4">
+        <div class="card-body">
+            <h4 class="card-title text-center">Confirm Your Email</h4>
+            <p class="text-center">Thank you for signing up! Please check your inbox for a confirmation email.</p>
+            <p class="text-center">Once confirmed, you'll be able to personalize your experience!</p>
+            <div class="text-center">
+                <button class="btn btn-primary" onclick="resendConfirmationEmail()">Resend Confirmation Email</button>
+            </div>
+            <p id="resend-message" class="resend-message">Email sent, please verify.</p>
+        </div>
+    </div>
+
+    <div id="success-animation" class="success-animation">
+        <span>✔ Email Confirmed</span>
+    </div>
+</div>
+
+<script>
+    // Check authentication on page load
+    async function checkAuth() {
+        try {
+            const response = await fetch('./api/v1/auth/check', {
+                credentials: 'include'
+            });
+            const data = await response.json();
+            if (!data.authenticated) {
+                window.location.href = 'LoginPage.html';
+            }
+        } catch (error) {
+            showError("Authentication failed");
+            setTimeout(() => window.location.href = "LoginPage.html", 2000);
+        }
+    }
+
+    function toggleLoading(show) {
+        document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+    }
+
+    function showError(message) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'alert alert-danger';
+        errorDiv.textContent = message;
+        document.body.appendChild(errorDiv);
+        setTimeout(() => errorDiv.remove(), 3000);
+    }
+
+    function showSuccess(message) {
+        const successDiv = document.createElement('div');
+        successDiv.className = 'alert alert-success';
+        successDiv.textContent = message;
+        document.body.appendChild(successDiv);
+        setTimeout(() => successDiv.remove(), 3000);
+    }
+
+    async function resendConfirmationEmail() {
+        try {
+            toggleLoading(true);
+            const response = await fetch('./api/v1/email/resend', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include'
+            });
+
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                const message = document.getElementById("resend-message");
+                message.style.display = "block";
+                setTimeout(() => {
+                    message.style.display = "none";
+                }, 2000);
+            } else {
+                showError(data.message || "Failed to resend confirmation email");
+            }
+        } catch (error) {
+            showError("Failed to resend confirmation email");
+        } finally {
+            toggleLoading(false);
+        }
+    }
+
+    async function checkEmailConfirmation() {
+        try {
+            const response = await fetch('./api/v1/email/status', {
+                credentials: 'include'
+            });
+            const data = await response.json();
+            
+            if (data.confirmed) {
+                document.getElementById("success-animation").style.display = "block";
+                setTimeout(() => {
+                    window.location.href = "dietary-restrictions.html";
+                }, 1000);
+            }
+        } catch (error) {
+            showError("Failed to check email confirmation status");
+        }
+    }
+
+    // Initialize page
+    checkAuth();
+    
+    // Check email confirmation status every 5 seconds
+    const confirmationCheck = setInterval(checkEmailConfirmation, 5000);
+
+    // Cleanup interval on page unload
+    window.onunload = function() {
+        clearInterval(confirmationCheck);
+    };
+</script>
+
+</body>
+</html>
