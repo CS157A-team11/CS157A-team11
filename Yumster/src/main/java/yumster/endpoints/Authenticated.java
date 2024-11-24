@@ -12,8 +12,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.google.gson.Gson;
 
-import yumster.dao.UserDao;
-import yumster.dao.UserTokenDao;
 import yumster.dao.UserDaoImpl;
 import yumster.dao.UserTokenDaoImpl;
 import yumster.helper.Response;
@@ -23,7 +21,7 @@ import yumster.obj.UserToken;
 /**
  * Servlet implementation class Register
  */
-@WebServlet("/api/v1/authenticated")
+@WebServlet("/api/v1/check")
 @MultipartConfig
 public class Authenticated extends HttpServlet {
 	private static final long serialVersionUID = 1L;
@@ -43,8 +41,8 @@ public class Authenticated extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		response.setContentType("application/json");
-		UserDao userDao = new UserDaoImpl();
-		UserTokenDao userTokenDao = new UserTokenDaoImpl();
+		UserDaoImpl userDao = new UserDaoImpl();
+		UserTokenDaoImpl userTokenDao = new UserTokenDaoImpl();
 
 		Cookie[] cookies = request.getCookies();
 		if (cookies == null) {
