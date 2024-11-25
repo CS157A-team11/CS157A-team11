@@ -16,7 +16,7 @@ import yumster.helper.Response;
 import yumster.obj.User;
 import yumster.obj.UserToken;
 
-@WebServlet("/Yumster/api/v1/auth/checkingNow")
+@WebServlet("/api/v1/auth/checkingNow")
 public class CheckAuth extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 	        throws ServletException, IOException {

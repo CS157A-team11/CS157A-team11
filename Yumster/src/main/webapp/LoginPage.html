@@ -170,7 +170,7 @@
 
             try {
                 const formData = new FormData(this);
-                const response = await fetch('/Yumster/api/v1/login', {  // Update API path
+                const response = await fetch('./api/v1/login', {  // Update API path
                     method: 'POST',
                     credentials: 'include',
                     body: formData
