@@ -44,14 +44,6 @@
             min-width: 300px;
             text-align: center;
         }
-        .favorite-tag {
-            display: inline-block;
-            background: #e9ecef;
-            padding: 5px 10px;
-            margin: 5px;
-            border-radius: 15px;
-            cursor: pointer;
-        }
         .favorite-tag .remove-btn {
             margin-left: 5px;
             color: #dc3545;
@@ -67,6 +59,30 @@
             border-color: #c3e6cb;
             color: #155724;
         }
+        
+        .letter-heading {
+    background: #f8f9fa;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+}
+
+.recipe-list {
+    padding-left: 20px;
+}
+
+.recipe-item {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+.favorite-tag {
+    background: #e9ecef;
+    padding: 8px 15px;
+    border-radius: 20px;
+    margin: 5px;
+    display: inline-block;
+}
     </style>
 </head>
 <body>
@@ -106,142 +122,204 @@
                         <button type="button" class="btn btn-secondary" onclick="goBack()">Previous</button>
                         <button type="button" class="btn btn-skip" onclick="skipPage()">Skip This Page</button>
                     </div>
+                    
+                    <div class="container">
+    <div class="row">
+        <!-- Available Recipes Column -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h4 class="card-title">Available Recipes</h4>
+                    <div id="available-recipes">
+                        <!-- Alphabetically organized recipes will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- User's Favorites Column -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h4 class="card-title">My Favorites</h4>
+                    <div id="favorite-recipes-list">
+                        <!-- User's favorite recipes will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+                    
                 </form>
             </div>
         </div>
     </div>
 
     <script>
-        async function checkAuth() {
-            try {
-                const response = await fetch('./api/v1/auth/check', {
-                    credentials: 'include'
-                });
-                const data = await response.json();
-                if (!data.authenticated) {
-                    window.location.href = 'LoginPage.html?returnUrl=' + encodeURIComponent(window.location.href);
-                } else {
-                    await loadUserFavorites();
-                }
-            } catch (error) {
-                showError("Authentication failed");
-                setTimeout(() => window.location.href = "LoginPage.html", 2000);
+    async function checkAuth() {
+        try {
+            const response = await fetch('/Yumster/api/v1/auth/checkingNow', {
+                credentials: 'include'
+            });
+            const data = await response.json();
+            if (!data.authenticated) {
+                window.location.href = `LoginPage.html?returnUrl=${encodeURIComponent(window.location.href)}`;
+            } else {
+                // Call these functions after successful authentication
+                populateMethods();
+                await loadUserMethods();
             }
+        } catch (error) {
+            showError("Authentication failed");
         }
+    }
 
-        function toggleLoading(show) {
-            document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
-        }
-
-        function showError(message) {
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'alert alert-danger';
-            errorDiv.textContent = message;
-            document.body.appendChild(errorDiv);
-            setTimeout(() => errorDiv.remove(), 3000);
-        }
-
-        function showSuccess(message) {
-            const successDiv = document.createElement('div');
-            successDiv.className = 'alert alert-success';
-            successDiv.textContent = message;
-            document.body.appendChild(successDiv);
-            setTimeout(() => successDiv.remove(), 3000);
-        }
-
-        async function loadUserFavorites() {
-            try {
-                toggleLoading(true);
-                const response = await fetch('./api/v1/favorites', {
-                    credentials: 'include'
-                });
-                const data = await response.json();
-                
-                if (data.status === 'success') {
-                    data.recipes.forEach(recipe => addFavoriteTag('favorite-recipes-list', recipe));
-                    data.ingredients.forEach(ingredient => addFavoriteTag('favorite-ingredients-list', ingredient));
-                }
-            } catch (error) {
-                showError("Failed to load favorites");
-            } finally {
-                toggleLoading(false);
+    async function loadUserFavorites() {
+        try {
+            toggleLoading(true);
+            const response = await fetch('/Yumster/api/v1/favorites', {
+                credentials: 'include'
+            });
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                populateRecipeList(data.recipes);
+                populateUserFavorites(data.favorites);
             }
+        } catch (error) {
+            showError("Failed to load favorites");
+        } finally {
+            toggleLoading(false);
         }
+    }
+    
 
-        function addFavoriteTag(listId, value) {
-            const list = document.getElementById(listId);
-            const tag = document.createElement('span');
-            tag.className = 'favorite-tag';
-            tag.innerHTML = `${value}<span class="remove-btn" onclick="removeTag(this)">×</span>`;
-            list.appendChild(tag);
-        }
-
-        function addFavoriteRecipe() {
-            const input = document.getElementById('favoriteRecipes');
-            if (input.value.trim()) {
-                addFavoriteTag('favorite-recipes-list', input.value.trim());
-                input.value = '';
-            }
-        }
-
-        function addFavoriteIngredient() {
-            const input = document.getElementById('favoriteIngredients');
-            if (input.value.trim()) {
-                addFavoriteTag('favorite-ingredients-list', input.value.trim());
-                input.value = '';
-            }
-        }
-
-        function removeTag(element) {
-            element.parentElement.remove();
-        }
-
-        document.getElementById('favorites-form').addEventListener('submit', async function(event) {
-            event.preventDefault();
-            try {
-                toggleLoading(true);
-
-                const favoritesData = {
-                    recipes: Array.from(document.querySelectorAll('#favorite-recipes-list .favorite-tag'))
-                        .map(tag => tag.textContent.slice(0, -1)),
-                    ingredients: Array.from(document.querySelectorAll('#favorite-ingredients-list .favorite-tag'))
-                        .map(tag => tag.textContent.slice(0, -1))
-                };
-
-                const response = await fetch('./api/v1/favorites/update', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify(favoritesData)
-                });
-
-                const data = await response.json();
-                
-                if (data.status === 'success') {
-                    showSuccess("Favorites saved successfully!");
-                    setTimeout(() => window.location.href = "cooking-methods.html", 1500);
-                } else {
-                    showError(data.message || "Failed to save favorites");
-                }
-            } catch (error) {
-                showError("An error occurred while saving favorites");
-            } finally {
-                toggleLoading(false);
-            }
+    function populateRecipeList(recipes) {
+        const container = document.getElementById('available-recipes');
+        container.innerHTML = '';
+        
+        // Group recipes by first letter
+        Object.entries(recipes).sort().forEach(([letter, recipeList]) => {
+            const section = document.createElement('div');
+            section.className = 'recipe-section mb-4';
+            section.innerHTML = `
+                <h5 class="letter-heading">${letter}</h5>
+                <div class="recipe-list">
+                    ${recipeList.map(recipe => `
+                        <div class="recipe-item d-flex justify-content-between align-items-center">
+                            <span>${recipe.name}</span>
+                            <button class="btn btn-sm btn-primary" 
+                                    onclick="addToFavorites(${recipe.id}, '${recipe.name}')">
+                                Add to Favorites
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            container.appendChild(section);
         });
+    }
+    
+    function populateUserFavorites(favorites) {
+        const container = document.getElementById('favorite-recipes-list');
+        container.innerHTML = '';
+        
+        favorites.forEach(recipe => {
+            addFavoriteTag(recipe.name, recipe.id);
+        });
+    }
 
-        function goBack() {
-            window.location.href = "dietary-restrictions.html";
+    function goBack() {
+        window.history.back();
+        // or specify exact page:
+        // window.location.href = "dietary-restrictions.html";
+    }
+
+    function skipPage() {
+        window.location.href = "cooking-methods.html";
+    }
+    
+    function addFavoriteTag(name, id) {
+        const list = document.getElementById('favorite-recipes-list');
+        const tag = document.createElement('span');
+        tag.className = 'favorite-tag';
+        tag.innerHTML = `
+            ${name}
+            <span class="remove-btn" onclick="removeFavorite(${id})">×</span>
+        `;
+        list.appendChild(tag);
+    }
+
+    async function addToFavorites(recipeId, recipeName) {
+        try {
+            const response = await fetch('/Yumster/api/v1/favorites/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({ recipeId })
+            });
+
+            const data = await response.json();
+            if (data.status === 'success') {
+                addFavoriteTag(recipeName, recipeId);
+                showSuccess("Recipe added to favorites");
+            } else {
+                showError(data.message || "Failed to add to favorites");
+            }
+        } catch (error) {
+            showError("Failed to add recipe to favorites");
         }
+    }
 
-        function skipPage() {
-            window.location.href = "cooking-methods.html";
+    async function removeFavorite(recipeId) {
+        try {
+            const response = await fetch('/Yumster/api/v1/favorites/remove', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({ recipeId })
+            });
+
+            const data = await response.json();
+            if (data.status === 'success') {
+                const tag = document.querySelector(`[data-id="${recipeId}"]`).parentElement;
+                tag.remove();
+                showSuccess("Recipe removed from favorites");
+            } else {
+                showError(data.message || "Failed to remove from favorites");
+            }
+        } catch (error) {
+            showError("Failed to remove recipe from favorites");
         }
+    }
 
-        // Initialize page
-        checkAuth();
+    function toggleLoading(show) {
+        document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+    }
+
+    function showError(message) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'alert alert-danger';
+        errorDiv.textContent = message;
+        document.body.appendChild(errorDiv);
+        setTimeout(() => errorDiv.remove(), 3000);
+    }
+
+    function showSuccess(message) {
+        const successDiv = document.createElement('div');
+        successDiv.className = 'alert alert-success';
+        successDiv.textContent = message;
+        document.body.appendChild(successDiv);
+        setTimeout(() => successDiv.remove(), 3000);
+    }
+
+    // Initialize page
+    checkAuth();
     </script>
 
 </body>

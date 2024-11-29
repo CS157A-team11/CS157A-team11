@@ -103,7 +103,7 @@
         
         async function checkAuth() {
             try {
-                const response = await fetch('./api/v1/auth/check', {
+                const response = await fetch('/Yumster/api/v1/auth/checkingNow', {
                     credentials: 'include'
                 });
                 const data = await response.json();
@@ -121,7 +121,7 @@
         async function loadCurrentUsername() {
             try {
                 toggleLoading(true);
-                const response = await fetch('./api/v1/user/profile', {
+                const response = await fetch('/Yumster/api/v1/user/profile', {
                     credentials: 'include'
                 });
                 const data = await response.json();
@@ -138,20 +138,19 @@
 
         async function validateNewUsername(username) {
             try {
-                const response = await fetch('./api/v1/username/check', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                const response = await fetch('/Yumster/api/v1/auth/check-username', {
+                    method: 'GET',
                     credentials: 'include',
-                    body: JSON.stringify({ username })
+                    headers: {
+                        'Accept': 'application/json'
+                    }
                 });
                 
                 const data = await response.json();
                 const feedback = document.getElementById('username-feedback');
                 const changeBtn = document.getElementById('change-btn');
                 
-                if (data.available) {
+                if (data.status === 'success') {
                     feedback.textContent = "Username available ✓";
                     feedback.className = "feedback green";
                     changeBtn.disabled = false;
@@ -161,7 +160,7 @@
                     changeBtn.disabled = true;
                 }
             } catch (error) {
-                showError("Error checking username availability");
+                console.error('Error:', error);
             }
         }
 
@@ -177,21 +176,22 @@
 
         document.getElementById('username-form').addEventListener('submit', async function(event) {
             event.preventDefault();
-            toggleLoading(true);
-
             try {
+                toggleLoading(true);
                 const formData = new FormData(this);
-                const response = await fetch('./api/v1/username/update', {
+                const response = await fetch('/Yumster/api/v1/change-username', {
                     method: 'POST',
-                    headers: {
-                    },
                     credentials: 'include',
                     body: formData
                 });
 
+                const contentType = response.headers.get("content-type");
+                if (!contentType || !contentType.includes("application/json")) {
+                    throw new Error("Server didn't return JSON");
+                }
+
                 const data = await response.json();
-                
-                if (data.status === 'success') {
+                if (response.ok && data.status === 'success') {
                     sessionStorage.setItem('username', data.newUsername);
                     showSuccess("Username updated successfully!");
                     setTimeout(() => window.location.href = returnUrl, 1500);
@@ -199,6 +199,7 @@
                     showError(data.message || "Failed to update username");
                 }
             } catch (error) {
+                console.error('Error:', error);
                 showError("An error occurred. Please try again.");
             } finally {
                 toggleLoading(false);
@@ -207,6 +208,18 @@
 
     function handleCancel() {
         window.location.href = returnUrl;
+    }
+    
+    function showError(message) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'alert alert-danger';
+        errorDiv.textContent = message;
+        document.body.appendChild(errorDiv);
+        setTimeout(() => errorDiv.remove(), 3000);
+    }
+
+    function toggleLoading(show) {
+        document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
     }
 
     // Initialize page

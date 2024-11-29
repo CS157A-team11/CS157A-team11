@@ -21,7 +21,7 @@ import yumster.obj.UserToken;
 /**
  * Servlet implementation class Register
  */
-@WebServlet("/api/v1/check")
+@WebServlet("/Yumster/api/v1/auth/checkingNow")
 @MultipartConfig
 public class Authenticated extends HttpServlet {
 	private static final long serialVersionUID = 1L;

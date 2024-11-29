@@ -86,27 +86,34 @@
     </div>
 
     <script>
-        const cookingMethods = [
-            'Boiling', 'Grilling', 'Frying', 'Baking', 
-            'Steaming', 'Roasting', 'Sautéing', 'Braising',
-            'Broiling', 'Poaching', 'Slow Cooking', 'Air Frying'
-        ];
+    const cookingMethods = [
+        'Boiling',    // ID: 1
+        'Grilling',   // ID: 2
+        'Frying',     // ID: 3
+        'Baking',     // ID: 4
+        'Roasting',   // ID: 5
+        'Steaming',   // ID: 6
+        'Sauteing',   // ID: 7
+        'Broiling',   // ID: 8
+        'Poaching',   // ID: 9
+        'Simmering'   // ID: 10
+    ];
 
         async function checkAuth() {
             try {
-                const response = await fetch('./api/v1/auth/check', {
+                const response = await fetch('/Yumster/api/v1/auth/checkingNow', {
                     credentials: 'include'
                 });
                 const data = await response.json();
                 if (!data.authenticated) {
                     window.location.href = `LoginPage.html?returnUrl=${encodeURIComponent(window.location.href)}`;
                 } else {
-                    await loadUserMethods();
+                    // Call these functions after successful authentication
                     populateMethods();
+                    await loadUserMethods();
                 }
             } catch (error) {
                 showError("Authentication failed");
-                setTimeout(() => window.location.href = "LoginPage.html", 2000);
             }
         }
 
@@ -147,14 +154,14 @@
         async function loadUserMethods() {
             try {
                 toggleLoading(true);
-                const response = await fetch('./api/v1/cooking-methods', {
+                const response = await fetch('/Yumster/api/v1/cooking-methods', {
                     credentials: 'include'
                 });
                 const data = await response.json();
                 
                 if (data.status === 'success') {
-                    data.methods.forEach(method => {
-                        const checkbox = document.getElementById(method.toLowerCase());
+                    data.userMethods.forEach(method => {
+                        const checkbox = document.getElementById(method.name.toLowerCase());
                         if (checkbox) checkbox.checked = true;
                     });
                 }
@@ -178,13 +185,14 @@
                     return;
                 }
 
-                const response = await fetch('./api/v1/cooking-methods/update', {
+                const response = await fetch('/Yumster/api/v1/cooking-methods/update', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     credentials: 'include',
-                    body: JSON.stringify({ methods: selectedMethods })
+                    body: JSON.stringify({ methodIds: selectedMethods.map(method => 
+                        cookingMethods.indexOf(method) + 1) })
                 });
 
                 const data = await response.json();
@@ -201,7 +209,6 @@
                 toggleLoading(false);
             }
         });
-
         function goBack() {
             window.location.href = "favorites.html";
         }
