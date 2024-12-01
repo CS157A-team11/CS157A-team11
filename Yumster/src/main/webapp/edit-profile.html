@@ -48,6 +48,36 @@
             color: #155724;
         }
         .btn:disabled { opacity: 0.65; cursor: not-allowed; }
+        .favorite-tag, .method-tag {
+    display: inline-block;
+    background: #e9ecef;
+    padding: 8px 15px;
+    border-radius: 20px;
+    margin: 5px;
+    font-size: 0.9rem;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+.text-muted {
+    color: #6c757d;
+    font-style: italic;
+}.favorite-item, .method-item {
+    background: #f8f9fa;
+    padding: 10px 15px;
+    margin-bottom: 8px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.recipe-name, .method-name {
+    font-size: 0.95rem;
+    color: #333;
+}
     </style>
 </head>
 <body>
@@ -58,75 +88,59 @@
     </div>
 
     <div class="container">
-        <div class="card">
-            <div class="card-body">
-                <h4 class="card-title text-center">Edit Profile</h4>
-                <form id="edit-profile-form" method="post">
-                    <!-- Favorite Recipes -->
-                    <div class="mb-4">
+
+    <div class="card">
+        <div class="card-body">
+            <h4 class="card-title text-center">Edit Profile</h4>
+            <form id="edit-profile-form" method="post">
+                <!-- Favorite Recipes Section -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center">
                         <h5>Favorite Recipes</h5>
-                        <div id="favorite-recipes-list" class="mb-3">
-                            <!-- Dynamically added recipes -->
-                        </div>
-                        <div class="input-group">
-                            <input type="text" id="new-recipe" class="form-control" placeholder="Add a recipe">
-                            <button type="button" class="btn btn-add" onclick="addRecipe()">Add</button>
-                        </div>
+                        <button type="button" class="btn btn-sm btn-primary" onclick="window.location.href='favorites.html'">
+                            Edit Favorites
+                        </button>
                     </div>
-
-                    <!-- Favorite Ingredients -->
-                    <div class="mb-4">
-                        <h5>Favorite Ingredients</h5>
-                        <div id="favorite-ingredients-list" class="mb-3">
-                            <!-- Dynamically added ingredients -->
-                        </div>
-                        <div class="input-group">
-                            <input type="text" id="new-ingredient" class="form-control" placeholder="Add an ingredient">
-                            <button type="button" class="btn btn-add" onclick="addIngredient()">Add</button>
-                        </div>
+                    <div id="favorite-recipes-list" class="mb-3">
+                        <!-- Favorites will be populated here -->
                     </div>
+                </div>
 
-                    <!-- Cooking Methods -->
-                    <div class="mb-4">
+                <!-- Cooking Methods Section -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center">
                         <h5>Cooking Methods</h5>
-                        <div id="cooking-methods-list" class="mb-3">
-                            <!-- Will be populated dynamically -->
-                        </div>
+                        <button type="button" class="btn btn-sm btn-primary" onclick="window.location.href='cooking-methods.html'">
+                            Edit Methods
+                        </button>
                     </div>
+                    <div id="cooking-methods-list" class="mb-3">
+                        <!-- Cooking methods will be populated here -->
+                    </div>
+                </div>
 
-                    <!-- Dietary Restrictions -->
-                    <div class="mb-4">
+                <!-- Dietary Restrictions Section -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center">
                         <h5>Dietary Restrictions</h5>
-                        <div id="dietary-restrictions-list" class="mb-3">
-                            <!-- Dynamically added restrictions -->
-                        </div>
-                        <div class="input-group">
-                            <input type="text" id="new-restriction" class="form-control" placeholder="Add a restriction">
-                            <button type="button" class="btn btn-add" onclick="addRestriction()">Add</button>
-                        </div>
+                        <button type="button" class="btn btn-sm btn-primary" onclick="window.location.href='dietary-restrictions.html'" disabled>
+                            Edit Restrictions
+                        </button>
                     </div>
+                    <div id="dietary-restrictions-list" class="mb-3">
+                        <p class="text-muted">Coming soon...</p>
+                    </div>
+                </div>
 
-                    <!-- Default Categorical Filters -->
-                    <div class="mb-4">
-                        <h5>Default Filters</h5>
-                        <select id="categorical-filters" class="form-select" multiple>
-                            <option value="vegetarian">Vegetarian</option>
-                            <option value="vegan">Vegan</option>
-                            <option value="gluten-free">Gluten-Free</option>
-                            <option value="dairy-free">Dairy-Free</option>
-                            <option value="nut-free">Nut-Free</option>
-                        </select>
-                    </div>
-
-                    <!-- Buttons -->
-                    <div class="text-center">
-                        <button type="submit" class="btn btn-save">Save Changes</button>
-                        <button type="button" class="btn btn-cancel" onclick="handleCancel()">Cancel</button>
-                    </div>
-                </form>
-            </div>
+                <!-- Buttons -->
+                <div class="text-center">
+                    <button type="submit" class="btn btn-save">Save Changes</button>
+                    <button type="button" class="btn btn-cancel" onclick="handleCancel()">Cancel</button>
+                </div>
+            </form>
         </div>
     </div>
+</div>
 
     <script>
         const returnUrl = new URLSearchParams(window.location.search).get('returnUrl') || 'home.html';
@@ -152,35 +166,40 @@
         
         async function loadUserProfile() {
             try {
-            	toggleLoading(true);
-                const [profileResponse,, methodsResponse, favoritesResponse] = await Promise.all([
-                    fetch('/Yumster/api/v1/profile', { credentials: 'include' }),
+                toggleLoading(true);
+                const [profileResponse, methodsResponse, favoritesResponse] = await Promise.all([
+                    fetch('/Yumster/api/v1/user/profile', { credentials: 'include' }),
                     fetch('/Yumster/api/v1/cooking-methods', { credentials: 'include' }),
                     fetch('/Yumster/api/v1/favorites', { credentials: 'include' })
                 ]);
+
                 const profileData = await profileResponse.json();
                 const methodsData = await methodsResponse.json();
                 const favoritesData = await favoritesResponse.json();
                 
-                if (profileData.status === 'success') {
+                if (profileData.status === 'success' && profileData.profile) {
                     populateForm(profileData.profile);
                 }
                 if (methodsData.status === 'success') {
                     populateCookingMethods(methodsData.methods, methodsData.userMethods);
+                    displayUserCookingMethods(methodsData.userMethods);
                 }
                 if (favoritesData.status === 'success') {
-                	populateRecipeList(data.recipes);
-                    populateUserFavorites(data.favorites);
+                    populateRecipeList(favoritesData.recipes);  // Fixed typo
+                    populateUserFavorites(favoritesData.favorites);
+                    displayUserFavorites(favoritesData.favorites);
                 }
             } catch (error) {
+                console.error('Error loading profile:', error);  // Add error logging
                 showError("Failed to load profile data");
-            }
-            finally {
+            } finally {
                 toggleLoading(false);
             }
         }
 
        
+        
+        
         function populateUserFavorites(favorites) {
             const container = document.getElementById('favorite-recipes-list');
             container.innerHTML = '';
@@ -198,18 +217,27 @@
         }
 
         function populateForm(profile) {
-            profile.favoriteRecipes.forEach(recipe => addItem('favorite-recipes-list', recipe));
-            profile.favoriteIngredients.forEach(ingredient => addItem('favorite-ingredients-list', ingredient));
-            profile.dietaryRestrictions.forEach(restriction => addItem('dietary-restrictions-list', restriction));
+            if (!profile) return;
+            
+            if (profile.favoriteRecipes) {
+                profile.favoriteRecipes.forEach(recipe => addItem('favorite-recipes-list', recipe));
+            }
+            if (profile.favoriteIngredients) {
+                profile.favoriteIngredients.forEach(ingredient => addItem('favorite-ingredients-list', ingredient));
+            }
+            if (profile.dietaryRestrictions) {
+                profile.dietaryRestrictions.forEach(restriction => addItem('dietary-restrictions-list', restriction));
+            }
             
             const filtersSelect = document.getElementById('categorical-filters');
-            profile.categoricalFilters.forEach(filter => {
-                Array.from(filtersSelect.options).forEach(option => {
-                    if (option.value === filter) option.selected = true;
+            if (filtersSelect && profile.categoricalFilters) {
+                profile.categoricalFilters.forEach(filter => {
+                    Array.from(filtersSelect.options).forEach(option => {
+                        if (option.value === filter) option.selected = true;
+                    });
                 });
-            });
+            }
         }
-        
         function populateRecipeList(recipes) {
             const container = document.getElementById('favorite-recipes-list');
             container.innerHTML = '';
@@ -252,7 +280,7 @@
                 container.appendChild(div);
             });
         }
-
+        
         function addItem(listId, name, id) {
             const list = document.getElementById(listId);
             const item = document.createElement('div');
@@ -263,6 +291,47 @@
                         onclick="removeItem(this, ${id})">Remove</button>
             `;
             list.appendChild(item);
+        }
+        
+        
+        function displayUserFavorites(favorites) {
+            const container = document.getElementById('favorite-recipes-list');
+            if (!container) return;  // Add null check
+            container.innerHTML = '';
+            
+            if (!favorites || favorites.length === 0) {
+                container.innerHTML = '<p class="text-muted">No favorite recipes selected</p>';
+                return;
+            }
+
+            favorites.forEach(recipe => {
+                const div = document.createElement('div');
+                div.className = 'favorite-item';
+                div.innerHTML = `
+                    <span class="recipe-name">${recipe.name}</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function displayUserCookingMethods(methods) {
+            const container = document.getElementById('cooking-methods-list');
+            if (!container) return;  // Add null check
+            container.innerHTML = '';
+            
+            if (!methods || methods.length === 0) {
+                container.innerHTML = '<p class="text-muted">No cooking methods selected</p>';
+                return;
+            }
+
+            methods.forEach(method => {
+                const div = document.createElement('div');
+                div.className = 'method-item';
+                div.innerHTML = `
+                    <span class="method-name">${method.name}</span>
+                `;
+                container.appendChild(div);
+            });
         }
         
         
@@ -293,13 +362,6 @@
         function removeItem(button) {
             button.parentElement.remove();
         }
-        
-        /*function removeItem(button, recipeId) {
-            button.parentElement.remove();
-        }*/
-        
-        
-            
         
         document.getElementById('edit-profile-form').addEventListener('submit', async function(event) {
             event.preventDefault();

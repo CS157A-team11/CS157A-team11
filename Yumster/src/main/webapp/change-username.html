@@ -176,6 +176,20 @@
             }
         });
 
+     // Add this utility function at the top of your script
+        function showSuccess(message) {
+            const successDiv = document.createElement('div');
+            successDiv.className = 'alert alert-success';
+            successDiv.textContent = message;
+            document.body.appendChild(successDiv);
+            setTimeout(() => {
+                successDiv.remove();
+                // Redirect to home page after showing success message
+                window.location.href = 'home.html';
+            }, 1500);
+        }
+
+        // Update the form submission handler
         document.getElementById('username-form').addEventListener('submit', async function(event) {
             event.preventDefault();
             try {
@@ -187,21 +201,15 @@
                     body: formData
                 });
 
-                const contentType = response.headers.get("content-type");
-                if (!contentType || !contentType.includes("application/json")) {
-                    throw new Error("Server didn't return JSON");
-                }
-
                 const data = await response.json();
-                if (response.ok && data.status === 'success') {
+                if (data.status === 'success') {
                     sessionStorage.setItem('username', data.newUsername);
                     showSuccess("Username updated successfully!");
-                    setTimeout(() => window.location.href = returnUrl, 1500);
+                    // Redirect is now handled in showSuccess function
                 } else {
                     showError(data.message || "Failed to update username");
                 }
             } catch (error) {
-                console.error('Error:', error);
                 showError("An error occurred. Please try again.");
             } finally {
                 toggleLoading(false);
