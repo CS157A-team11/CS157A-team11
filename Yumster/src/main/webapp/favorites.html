@@ -3,25 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Favorites</title>
+    <title>Recipe Favorites</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { 
             background-color: #f8f9fa; 
+            padding: 20px;
         }
         .container { 
-            margin-top: 50px; 
+            margin-top: 30px; 
         }
         .card { 
             border-radius: 10px; 
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); 
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
         }
-        .btn-skip { 
-            background-color: #6c757d; 
-            color: white; 
+        .letter-heading {
+            background: #e9ecef;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-weight: 500;
         }
-        .btn-skip:hover { 
-            background-color: #5a6268; 
+        .recipe-item {
+            padding: 8px 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .recipe-item:hover {
+            background-color: #f8f9fa;
+        }
+        .recipe-item.selected {
+            background-color: #e9ecef;
+        }
+        .favorites-list {
+            min-height: 200px;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 15px;
+        }
+        .favorite-tag {
+            display: inline-block;
+            background: #e9ecef;
+            padding: 5px 15px;
+            border-radius: 20px;
+            margin: 5px;
+        }
+        .remove-btn {
+            color: #dc3545;
+            cursor: pointer;
+            margin-left: 8px;
         }
         .loading-overlay {
             position: fixed;
@@ -35,54 +67,6 @@
             align-items: center;
             z-index: 1000;
         }
-        .alert {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1001;
-            min-width: 300px;
-            text-align: center;
-        }
-        .favorite-tag .remove-btn {
-            margin-left: 5px;
-            color: #dc3545;
-            cursor: pointer;
-        }
-        .alert-danger {
-            background-color: #f8d7da;
-            border-color: #f5c6cb;
-            color: #721c24;
-        }
-        .alert-success {
-            background-color: #d4edda;
-            border-color: #c3e6cb;
-            color: #155724;
-        }
-        
-        .letter-heading {
-    background: #f8f9fa;
-    padding: 10px;
-    margin-bottom: 10px;
-    border-radius: 5px;
-}
-
-.recipe-list {
-    padding-left: 20px;
-}
-
-.recipe-item {
-    padding: 8px;
-    border-bottom: 1px solid #eee;
-}
-
-.favorite-tag {
-    background: #e9ecef;
-    padding: 8px 15px;
-    border-radius: 20px;
-    margin: 5px;
-    display: inline-block;
-}
     </style>
 </head>
 <body>
@@ -92,46 +76,15 @@
         </div>
     </div>
 
-    <div class="container">
-        <div class="card mb-4">
-            <div class="card-body">
-                <h4 class="card-title">Favorites</h4>
-                <form id="favorites-form" method="post">
-                    <!-- Favorite Recipes -->
-                    <div class="mb-3">
-                        <label for="favoriteRecipes" class="form-label">Favorite Recipes:</label>
-                        <div class="input-group">
-                            <input type="text" class="form-control" id="favoriteRecipes" placeholder="e.g., Spaghetti Bolognese">
-                            <button type="button" class="btn btn-primary" onclick="addFavoriteRecipe()">Add</button>
-                        </div>
-                        <div id="favorite-recipes-list" class="mt-2"></div>
-                    </div>
-
-                    <!-- Favorite Ingredients -->
-                    <div class="mb-3">
-                        <label for="favoriteIngredients" class="form-label">Favorite Ingredients:</label>
-                        <div class="input-group">
-                            <input type="text" class="form-control" id="favoriteIngredients" placeholder="e.g., Tomato, Basil">
-                            <button type="button" class="btn btn-primary" onclick="addFavoriteIngredient()">Add</button>
-                        </div>
-                        <div id="favorite-ingredients-list" class="mt-2"></div>
-                    </div>
-
-                    <div class="text-center">
-                        <button type="submit" class="btn btn-primary">Next</button>
-                        <button type="button" class="btn btn-secondary" onclick="goBack()">Previous</button>
-                        <button type="button" class="btn btn-skip" onclick="skipPage()">Skip This Page</button>
-                    </div>
-                    
-                    <div class="container">
+<div class="container">
     <div class="row">
         <!-- Available Recipes Column -->
         <div class="col-md-8">
-            <div class="card mb-4">
+            <div class="card">
                 <div class="card-body">
                     <h4 class="card-title">Available Recipes</h4>
                     <div id="available-recipes">
-                        <!-- Alphabetically organized recipes will be populated here -->
+                        <!-- Recipes will be populated here -->
                     </div>
                 </div>
             </div>
@@ -139,169 +92,31 @@
         
         <!-- User's Favorites Column -->
         <div class="col-md-4">
-            <div class="card mb-4">
+            <div class="card">
                 <div class="card-body">
                     <h4 class="card-title">My Favorites</h4>
                     <div id="favorite-recipes-list">
-                        <!-- User's favorite recipes will be populated here -->
+                        <!-- Selected favorites will appear here -->
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
-                    
-                </form>
+    
+    <!-- Add this button container -->
+    <div class="card mt-3">
+        <div class="card-body text-center">
+            <div id="button-container">
+                <!-- Buttons will be added dynamically -->
             </div>
         </div>
     </div>
+</div>
+
 
     <script>
-    async function checkAuth() {
-        try {
-            const response = await fetch('/Yumster/api/v1/auth/checkingNow', {
-                credentials: 'include'
-            });
-            const data = await response.json();
-            if (!data.authenticated) {
-                window.location.href = `LoginPage.html?returnUrl=${encodeURIComponent(window.location.href)}`;
-            } else {
-                // Call these functions after successful authentication
-                populateMethods();
-                await loadUserMethods();
-            }
-        } catch (error) {
-            showError("Authentication failed");
-        }
-    }
-
-    async function loadUserFavorites() {
-        try {
-            toggleLoading(true);
-            const response = await fetch('/Yumster/api/v1/favorites', {
-                credentials: 'include'
-            });
-            const data = await response.json();
-            
-            if (data.status === 'success') {
-                populateRecipeList(data.recipes);
-                populateUserFavorites(data.favorites);
-            }
-        } catch (error) {
-            showError("Failed to load favorites");
-        } finally {
-            toggleLoading(false);
-        }
-    }
     
-
-    function populateRecipeList(recipes) {
-        const container = document.getElementById('available-recipes');
-        container.innerHTML = '';
-        
-        // Group recipes by first letter
-        Object.entries(recipes).sort().forEach(([letter, recipeList]) => {
-            const section = document.createElement('div');
-            section.className = 'recipe-section mb-4';
-            section.innerHTML = `
-                <h5 class="letter-heading">${letter}</h5>
-                <div class="recipe-list">
-                    ${recipeList.map(recipe => `
-                        <div class="recipe-item d-flex justify-content-between align-items-center">
-                            <span>${recipe.name}</span>
-                            <button class="btn btn-sm btn-primary" 
-                                    onclick="addToFavorites(${recipe.id}, '${recipe.name}')">
-                                Add to Favorites
-                            </button>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-            container.appendChild(section);
-        });
-    }
-    
-    function populateUserFavorites(favorites) {
-        const container = document.getElementById('favorite-recipes-list');
-        container.innerHTML = '';
-        
-        favorites.forEach(recipe => {
-            addFavoriteTag(recipe.name, recipe.id);
-        });
-    }
-
-    function goBack() {
-        window.history.back();
-        // or specify exact page:
-        // window.location.href = "dietary-restrictions.html";
-    }
-
-    function skipPage() {
-        window.location.href = "cooking-methods.html";
-    }
-    
-    function addFavoriteTag(name, id) {
-        const list = document.getElementById('favorite-recipes-list');
-        const tag = document.createElement('span');
-        tag.className = 'favorite-tag';
-        tag.innerHTML = `
-            ${name}
-            <span class="remove-btn" onclick="removeFavorite(${id})">×</span>
-        `;
-        list.appendChild(tag);
-    }
-
-    async function addToFavorites(recipeId, recipeName) {
-        try {
-            const response = await fetch('/Yumster/api/v1/favorites/add', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'include',
-                body: JSON.stringify({ recipeId })
-            });
-
-            const data = await response.json();
-            if (data.status === 'success') {
-                addFavoriteTag(recipeName, recipeId);
-                showSuccess("Recipe added to favorites");
-            } else {
-                showError(data.message || "Failed to add to favorites");
-            }
-        } catch (error) {
-            showError("Failed to add recipe to favorites");
-        }
-    }
-
-    async function removeFavorite(recipeId) {
-        try {
-            const response = await fetch('/Yumster/api/v1/favorites/remove', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'include',
-                body: JSON.stringify({ recipeId })
-            });
-
-            const data = await response.json();
-            if (data.status === 'success') {
-                const tag = document.querySelector(`[data-id="${recipeId}"]`).parentElement;
-                tag.remove();
-                showSuccess("Recipe removed from favorites");
-            } else {
-                showError(data.message || "Failed to remove from favorites");
-            }
-        } catch (error) {
-            showError("Failed to remove recipe from favorites");
-        }
-    }
-
-    function toggleLoading(show) {
-        document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
-    }
-
+ // Utility Functions
     function showError(message) {
         const errorDiv = document.createElement('div');
         errorDiv.className = 'alert alert-danger';
@@ -318,9 +133,232 @@
         setTimeout(() => successDiv.remove(), 3000);
     }
 
+    function toggleLoading(show) {
+        document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+    }
+
+    // Authentication and Data Loading
+    async function checkAuth() {
+        try {
+            const response = await fetch('/Yumster/api/v1/auth/checkingNow', {
+                credentials: 'include'
+            });
+            const data = await response.json();
+            if (!data.authenticated) {
+                window.location.href = `LoginPage.html?returnUrl=${encodeURIComponent(window.location.href)}`;
+            } else {
+                await loadRecipesAndFavorites();
+                setupButtons();
+            }
+        } catch (error) {
+            showError("Authentication failed");
+        }
+    }
+
+    async function loadRecipesAndFavorites() {
+        try {
+            toggleLoading(true);
+            const response = await fetch('/Yumster/api/v1/favorites', {
+                credentials: 'include'
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to fetch recipes');
+            }
+
+            const data = await response.json();
+            if (data.status === 'success') {
+                populateAvailableRecipes(data.recipes);
+                if (data.favorites && data.favorites.length > 0) {
+                    populateUserFavorites(data.favorites);
+                }
+            }
+        } catch (error) {
+            showError("Failed to load recipes");
+        } finally {
+            toggleLoading(false);
+        }
+    }
+
+    // Recipe Display Functions
+    function populateAvailableRecipes(recipes) {
+        const container = document.getElementById('available-recipes');
+        container.innerHTML = '';
+        
+        Object.entries(recipes).sort().forEach(([letter, recipeList]) => {
+            const section = document.createElement('div');
+            section.className = 'recipe-section mb-4';
+            section.innerHTML = `
+                <h5 class="letter-heading">${letter}</h5>
+                <div class="recipe-list">
+                    ${recipeList.map(recipe => `
+                        <div class="recipe-item d-flex justify-content-between align-items-center">
+                            <span>${recipe.name}</span>
+                            <button class="btn btn-sm btn-primary" 
+                                    onclick="addToFavorites(${recipe.id}, '${recipe.name}')">
+                                Add
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            container.appendChild(section);
+        });
+    }
+
+    function populateUserFavorites(favorites) {
+        const container = document.getElementById('favorite-recipes-list');
+        container.innerHTML = '';
+        
+        if (!favorites || favorites.length === 0) {
+            container.innerHTML = '<p class="text-muted">No favorite recipes selected</p>';
+            return;
+        }
+        
+        favorites.forEach(recipe => {
+            addFavoriteTag(recipe.name, recipe.id);
+        });
+    }
+
+    // Favorite Management Functions
+    async function addToFavorites(recipeId, recipeName) {
+        // Check for duplicates
+        const existingFavorite = document.querySelector(`#favorite-recipes-list [data-id="${recipeId}"]`);
+        if (existingFavorite) {
+            showError("Recipe already in favorites");
+            return;
+        }
+
+        try {
+            const response = await fetch('/Yumster/api/v1/favorites/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({ recipeId })
+            });
+
+            if (!response.ok) {
+                throw new Error('Server response was not ok');
+            }
+
+            const data = await response.json();
+            if (data.status === 'success') {
+                addFavoriteTag(recipeName, recipeId);
+                showSuccess("Recipe added to favorites");
+            }
+        } catch (error) {
+            showError("Failed to add recipe to favorites");
+        }
+    }
+
+    function addFavoriteTag(recipeName, recipeId) {
+        const container = document.getElementById('favorite-recipes-list');
+        const favoriteItem = document.createElement('div');
+        favoriteItem.className = 'favorite-tag';
+        favoriteItem.setAttribute('data-id', recipeId);
+        favoriteItem.innerHTML = `
+            ${recipeName}
+            <span class="remove-btn" onclick="removeFavorite(${recipeId})">×</span>
+        `;
+        container.appendChild(favoriteItem);
+    }
+
+    async function removeFavorite(recipeId) {
+        try {
+            const response = await fetch('/Yumster/api/v1/favorites/remove', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({ recipeId })
+            });
+
+            if (!response.ok) {
+                throw new Error('Server response was not ok');
+            }
+
+            const data = await response.json();
+            if (data.status === 'success') {
+                const favoriteItem = document.querySelector(`#favorite-recipes-list [data-id="${recipeId}"]`);
+                if (favoriteItem) {
+                    favoriteItem.remove();
+                    showSuccess("Recipe removed from favorites");
+                }
+            }
+        } catch (error) {
+            showError("Failed to remove recipe from favorites");
+        }
+    }
+
+    // Button Setup and Navigation
+    function setupButtons() {
+        const container = document.getElementById('button-container');
+        const params = new URLSearchParams(window.location.search);
+        const isOnboarding = params.get('onboarding') === 'true';
+        
+        if (isOnboarding) {
+            container.innerHTML = `
+                <button class="btn btn-primary me-2" onclick="saveAndContinue()">Next</button>
+                <button class="btn btn-secondary me-2" onclick="goBack()">Previous</button>
+                <button class="btn btn-link" onclick="skipPage()">Skip this step</button>
+            `;
+        } else {
+            container.innerHTML = `
+                <button class="btn btn-primary me-2" onclick="saveChanges()">Save Changes</button>
+                <button class="btn btn-secondary" onclick="goBack()">Back</button>
+            `;
+        }
+    }
+
+    async function saveChanges() {
+        try {
+            toggleLoading(true);
+            const favoriteIds = Array.from(document.querySelectorAll('#favorite-recipes-list [data-id]'))
+                .map(item => parseInt(item.getAttribute('data-id')));
+
+            const response = await fetch('/Yumster/api/v1/favorites/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({ recipeIds: favoriteIds })
+            });
+
+            const data = await response.json();
+            if (data.status === 'success') {
+                showSuccess("Changes saved successfully");
+                setTimeout(() => window.location.href = 'home.html', 1500);
+            }
+        } catch (error) {
+            showError("Failed to save changes");
+        } finally {
+            toggleLoading(false);
+        }
+    }
+
+    function saveAndContinue() {
+        saveChanges().then(() => {
+            window.location.href = 'cooking-methods.html';
+        });
+    }
+
+    function skipPage() {
+        window.location.href = 'cooking-methods.html';
+    }
+
+    function goBack() {
+        window.location.href = document.referrer || 'home.html';
+    }
+
+    // Initialize page
+    checkAuth();
+    
     // Initialize page
     checkAuth();
     </script>
-
 </body>
 </html>

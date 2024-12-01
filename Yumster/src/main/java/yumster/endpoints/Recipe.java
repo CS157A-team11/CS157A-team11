@@ -32,14 +32,23 @@ import yumster.obj.UserToken;
  */
 @WebServlet("/api/v1/recipe/*")
 @MultipartConfig
-public class Recipe extends HttpServlet {
-	/**
-	 * @see HttpServlet#HttpServlet()
-	 */
-	public Recipe() { 
-		super();
-		// TODO Auto-generated constructor stub
-	}
+
+
+public class Recipe {
+    private int id;
+    private String name;
+    private String instructions;
+    private int time;
+    private int servings;
+    private int userId;
+
+    // Constructors
+    public Recipe() {}
+    
+    public Recipe(int id, String name) {
+        this.id = id;
+        this.name = name;
+    }
 
 	/**
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse
@@ -49,6 +58,8 @@ public class Recipe extends HttpServlet {
 			throws ServletException, IOException {
 		response.setContentType("application/json");
 		RecipeDao recipeDao = new RecipeDaoImpl();
+		
+		
 
 		String getIdString = request.getPathInfo(); // remove prepending /
 		if (StringUtils.isEmpty(getIdString)) {
@@ -238,6 +249,17 @@ public class Recipe extends HttpServlet {
 		response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		response.getWriter().print(res.toJson());
 		return;
+		
 	}
-	
-}
+		  @Override
+		    public String toString() {
+		        return "Recipe{" +
+		            "id=" + id +
+		            ", name='" + name + '\'' +
+		            ", instructions='" + instructions + '\'' +
+		            ", time=" + time +
+		            ", servings=" + servings +
+		            ", userId=" + userId +
+		            '}';
+		    }
+		}

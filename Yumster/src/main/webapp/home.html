@@ -280,6 +280,20 @@
 }
 
         
+        function populateFavoriteRecipes(favorites) {
+            const container = document.getElementById('favorite-recipes');
+            if (container) {
+                container.innerHTML = '';
+                favorites.forEach(recipe => {
+                    const div = document.createElement('div');
+                    div.className = 'favorite-tag';
+                    div.innerHTML = `${recipe.name}`;
+                    container.appendChild(div);
+                });
+            }
+        }
+        
+        
 function populateCookingMethodFilters(methods) {
     const tagFilters = document.getElementById('tagFilters');
     const methodsSection = document.createElement('div');
@@ -401,21 +415,30 @@ function populateCookingMethodFilters(methods) {
         }
     
         // Logout handling
-        document.getElementById('logoutBtn').addEventListener('click', async function(e) {
+      // Update the logout handler in home.html
+document.getElementById('logoutBtn').addEventListener('click', async function(e) {
     e.preventDefault();
     try {
-    	const response = await fetch('./api/v1/auth/logout', {
+        toggleLoading(true);
+        const response = await fetch('/Yumster/api/v1/logout', {  // Use absolute path
             method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
             credentials: 'include'
         });
-        
-        if (response.ok) {
-            sessionStorage.clear();  // Clear session storage
+
+        const data = await response.json();
+        if (response.ok && data.status === 'success') {
+            sessionStorage.clear();
             window.location.href = 'LoginPage.html';
+        } else {
+            throw new Error(data.message || 'Logout failed');
         }
     } catch (error) {
-        console.error('Logout error:', error);  // Add error logging
-        showError("Failed to logout");
+        showError("Failed to logout: " + error.message);
+    } finally {
+        toggleLoading(false);
     }
 });
     

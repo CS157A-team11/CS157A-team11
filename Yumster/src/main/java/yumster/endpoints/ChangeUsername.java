@@ -19,6 +19,8 @@ import yumster.dao.UserTokenDaoImpl;
 import yumster.helper.Response;
 import yumster.obj.User;
 import yumster.obj.UserToken;
+import yumster.dao.ChangeUsernameDao;
+import yumster.dao.ChangeUsernameDaoImpl;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -26,12 +28,50 @@ import org.apache.commons.logging.LogFactory;
 /**
  * Servlet implementation class Register
  */
-@WebServlet("/api/v1/change-username")
+
+
+@WebServlet("/api/v1/change-username/*")
 @MultipartConfig
 public class ChangeUsername extends HttpServlet {
-    private static final long serialVersionUID = 1L;
-    private static final Log log = LogFactory.getLog(ChangeUsername.class);
-    
+ private static final long serialVersionUID = 1L;
+ private static final Log log = LogFactory.getLog(ChangeUsername.class);
+ // Change to interface type
+ private final ChangeUsernameDao changeUsernameDao;
+ 
+ public ChangeUsername() {
+     super();
+     // Initialize in constructor
+     this.changeUsernameDao = new ChangeUsernameDaoImpl();
+ }
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) 
+            throws ServletException, IOException {
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        
+        try {
+            User user = authenticateUser(request);
+            if (user == null) {
+                sendError(response, "Unauthorized", HttpServletResponse.SC_UNAUTHORIZED);
+                return;
+            }
+
+            User currentUser = changeUsernameDao.getCurrentUsername(user.getId());
+            if (currentUser != null) {
+                JsonObject jsonResponse = new JsonObject();
+                jsonResponse.addProperty("status", "success");
+                jsonResponse.addProperty("username", currentUser.getUname());
+                response.getWriter().write(jsonResponse.toString());
+            } else {
+                sendError(response, "User not found", HttpServletResponse.SC_NOT_FOUND);
+            }
+        } catch (Exception e) {
+            log.error("Error in doGet: " + e.getMessage());
+            sendError(response, "Internal server error", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {

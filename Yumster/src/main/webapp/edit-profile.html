@@ -169,7 +169,8 @@
                     populateCookingMethods(methodsData.methods, methodsData.userMethods);
                 }
                 if (favoritesData.status === 'success') {
-                	populateForm1(data);
+                	populateRecipeList(data.recipes);
+                    populateUserFavorites(data.favorites);
                 }
             } catch (error) {
                 showError("Failed to load profile data");
@@ -179,8 +180,22 @@
             }
         }
 
-
-        
+       
+        function populateUserFavorites(favorites) {
+            const container = document.getElementById('favorite-recipes-list');
+            container.innerHTML = '';
+            
+            favorites.forEach(recipe => {
+                const favoriteItem = document.createElement('div');
+                favoriteItem.className = 'favorite-tag';
+                favoriteItem.setAttribute('data-id', recipe.id);
+                favoriteItem.innerHTML = `
+                    ${recipe.name}
+                    <span class="remove-btn" onclick="removeFavorite(${recipe.id})">×</span>
+                `;
+                container.appendChild(favoriteItem);
+            });
+        }
 
         function populateForm(profile) {
             profile.favoriteRecipes.forEach(recipe => addItem('favorite-recipes-list', recipe));
@@ -195,37 +210,27 @@
             });
         }
         
-        function populateForm1(data) {
-            // Populate recipes by alphabet
-            const recipesContainer = document.getElementById('favorite-recipes-list');
-            recipesContainer.innerHTML = '';
+        function populateRecipeList(recipes) {
+            const container = document.getElementById('favorite-recipes-list');
+            container.innerHTML = '';
             
-            data.favorites.forEach(recipe => {
-                addItem('favorite-recipes-list', recipe.name, recipe.id);
+            Object.entries(recipes).sort().forEach(([letter, recipeList]) => {
+                const section = document.createElement('div');
+                section.className = 'recipe-section mb-3';
+                section.innerHTML = `
+                    <h6>${letter}</h6>
+                    ${recipeList.map(recipe => `
+                        <div class="recipe-item" data-id="${recipe.id}">
+                            <span>${recipe.name}</span>
+                            <button class="btn btn-sm btn-primary" 
+                                    onclick="addFavorite(${recipe.id}, '${recipe.name}')">
+                                Add
+                            </button>
+                        </div>
+                    `).join('')}
+                `;
+                container.appendChild(section);
             });
-
-            // Populate available recipes for selection
-            const availableContainer = document.getElementById('available-recipes');
-            if (availableContainer) {
-                availableContainer.innerHTML = '';
-                Object.entries(data.recipes).forEach(([letter, recipes]) => {
-                    const section = document.createElement('div');
-                    section.className = 'recipe-section mb-3';
-                    section.innerHTML = `
-                        <h6>${letter}</h6>
-                        ${recipes.map(recipe => `
-                            <div class="recipe-item" data-id="${recipe.id}">
-                                <span>${recipe.name}</span>
-                                <button class="btn btn-sm btn-primary" 
-                                        onclick="addFavorite(${recipe.id}, '${recipe.name}')">
-                                    Add
-                                </button>
-                            </div>
-                        `).join('')}
-                    `;
-                    availableContainer.appendChild(section);
-                });
-            }
         }
 
         function populateCookingMethods(methods, userMethods) {
