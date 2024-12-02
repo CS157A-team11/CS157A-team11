@@ -180,10 +180,14 @@
                 if (profileData.status === 'success' && profileData.profile) {
                     populateForm(profileData.profile);
                 }
+                
                 if (methodsData.status === 'success') {
-                    populateCookingMethods(methodsData.methods, methodsData.userMethods);
-                    displayUserCookingMethods(methodsData.userMethods);
+                    const methods = methodsData.methods || [];
+                    const userMethods = methodsData.userMethods || [];
+                    displayUserCookingMethods(methods.filter(method => userMethods.includes(method.id)));
                 }
+                
+                
                 if (favoritesData.status === 'success') {
                     populateRecipeList(favoritesData.recipes);  // Fixed typo
                     populateUserFavorites(favoritesData.favorites);
@@ -316,7 +320,7 @@
 
         function displayUserCookingMethods(methods) {
             const container = document.getElementById('cooking-methods-list');
-            if (!container) return;  // Add null check
+            if (!container) return;
             container.innerHTML = '';
             
             if (!methods || methods.length === 0) {
@@ -328,7 +332,7 @@
                 const div = document.createElement('div');
                 div.className = 'method-item';
                 div.innerHTML = `
-                    <span class="method-name">${method.name}</span>
+                    <span class="method-name">${method.name || 'Unknown method'}</span>
                 `;
                 container.appendChild(div);
             });
