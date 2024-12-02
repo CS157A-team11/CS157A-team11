@@ -59,6 +59,29 @@
             opacity: 0.65;
             cursor: not-allowed;
         }
+        .method-tag {
+    display: inline-block;
+    background: #e9ecef;
+    padding: 8px 15px;
+    border-radius: 20px;
+    margin: 5px;
+    font-size: 0.9rem;
+}
+
+.remove-btn {
+    color: #dc3545;
+    cursor: pointer;
+    margin-left: 8px;
+    font-weight: bold;
+}
+
+#selected-methods-list {
+    min-height: 100px;
+    border: 2px dashed #dee2e6;
+    border-radius: 10px;
+    padding: 15px;
+    margin-top: 10px;
+}
     </style>
 </head>
 <body>
@@ -68,45 +91,72 @@
         </div>
     </div>
 
-    <div class="container">
-        <div class="card mb-4">
-            <div class="card-body">
-                <h4 class="card-title">Cooking Methods</h4>
-                <form id="cooking-methods-form" method="post">
+<div class="container">
+    <div class="row">
+        <!-- Available Methods Column -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h4 class="card-title">Available Cooking Methods</h4>
                     <div class="mb-3 checkbox-grid" id="methods-container">
-                        <!-- Dynamically populated -->
+                        <!-- Methods will be populated here -->
                     </div>
-                    <div class="text-center">
-                        <button type="submit" class="btn btn-primary" id="submit-btn">Complete Setup</button>
-                        <button type="button" class="btn btn-secondary" onclick="goBack()">Previous</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Selected Methods Column -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h4 class="card-title">My Cooking Methods</h4>
+                    <div id="selected-methods-list">
+                        <!-- Selected methods will appear here -->
                     </div>
-                </form>
+                </div>
             </div>
         </div>
     </div>
 
+    <!-- Buttons Container -->
+    <div class="card">
+        <div class="card-body text-center">
+            <button type="button" class="btn btn-primary" id="submit-btn" onclick="saveChanges()">Complete Setup</button>
+            <button type="button" class="btn btn-secondary" onclick="goBack()">Previous</button>
+        </div>
+    </div>
+</div>
+
+
     <script>
-        const cookingMethods = [
-            'Boiling', 'Grilling', 'Frying', 'Baking', 
-            'Steaming', 'Roasting', 'Sautéing', 'Braising',
-            'Broiling', 'Poaching', 'Slow Cooking', 'Air Frying'
-        ];
+    const cookingMethods = [
+        'Boiling',    // ID: 1
+        'Grilling',   // ID: 2
+        'Frying',     // ID: 3
+        'Baking',     // ID: 4
+        'Roasting',   // ID: 5
+        'Steaming',   // ID: 6
+        'Sauteing',   // ID: 7
+        'Broiling',   // ID: 8
+        'Poaching',   // ID: 9
+        'Simmering'   // ID: 10
+    ];
 
         async function checkAuth() {
             try {
-                const response = await fetch('./api/v1/auth/check', {
+                const response = await fetch('/Yumster/api/v1/auth/checkingNow', {
                     credentials: 'include'
                 });
                 const data = await response.json();
                 if (!data.authenticated) {
                     window.location.href = `LoginPage.html?returnUrl=${encodeURIComponent(window.location.href)}`;
                 } else {
-                    await loadUserMethods();
+                    // Call these functions after successful authentication
                     populateMethods();
+                    await loadUserMethods();
                 }
             } catch (error) {
                 showError("Authentication failed");
-                setTimeout(() => window.location.href = "LoginPage.html", 2000);
             }
         }
 
@@ -147,16 +197,14 @@
         async function loadUserMethods() {
             try {
                 toggleLoading(true);
-                const response = await fetch('./api/v1/cooking-methods', {
+                const response = await fetch('/Yumster/api/v1/cooking-methods', {
                     credentials: 'include'
                 });
                 const data = await response.json();
                 
                 if (data.status === 'success') {
-                    data.methods.forEach(method => {
-                        const checkbox = document.getElementById(method.toLowerCase());
-                        if (checkbox) checkbox.checked = true;
-                    });
+                    populateAvailableMethods(data.methods);
+                    populateSelectedMethods(data.userMethods);
                 }
             } catch (error) {
                 showError("Failed to load cooking methods");
@@ -165,43 +213,112 @@
             }
         }
 
-        document.getElementById('cooking-methods-form').addEventListener('submit', async function(event) {
-            event.preventDefault();
+        function populateAvailableMethods(methods) {
+            const container = document.getElementById('methods-container');
+            container.innerHTML = '';
+            
+            methods.forEach(method => {
+                const div = document.createElement('div');
+                div.className = 'form-check';
+                div.innerHTML = `
+                    <input class="form-check-input" type="checkbox" 
+                           id="method-${method.id}" 
+                           value="${method.id}"
+                           onchange="handleMethodSelection(this, '${method.name}')">
+                    <label class="form-check-label" for="method-${method.id}">
+                        ${method.name}
+                    </label>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function populateSelectedMethods(userMethods) {
+            const container = document.getElementById('selected-methods-list');
+            container.innerHTML = userMethods.length ? '' : '<p class="text-muted">No methods selected</p>';
+            
+            userMethods.forEach(methodId => {
+                const method = cookingMethods[methodId - 1];
+                if (method) {
+                    addMethodTag(methodId, method);
+                    document.getElementById(`method-${methodId}`).checked = true;
+                }
+            });
+        }
+
+        function handleMethodSelection(checkbox, methodName) {
+            const methodId = parseInt(checkbox.value);
+            if (checkbox.checked) {
+                if (!document.querySelector(`#selected-methods-list [data-id="${methodId}"]`)) {
+                    addMethodTag(methodId, methodName);
+                }
+            } else {
+                removeMethodTag(methodId);
+            }
+        }
+
+        function addMethodTag(methodId, methodName) {
+            const container = document.getElementById('selected-methods-list');
+            const emptyMessage = container.querySelector('.text-muted');
+            if (emptyMessage) emptyMessage.remove();
+
+            const tag = document.createElement('div');
+            tag.className = 'method-tag';
+            tag.setAttribute('data-id', methodId);
+            tag.innerHTML = `
+                ${methodName}
+                <span class="remove-btn" onclick="removeMethod(${methodId})">×</span>
+            `;
+            container.appendChild(tag);
+        }
+
+        function removeMethod(methodId) {
+            document.getElementById(`method-${methodId}`).checked = false;
+            removeMethodTag(methodId);
+        }
+
+        function removeMethodTag(methodId) {
+            const tag = document.querySelector(`#selected-methods-list [data-id="${methodId}"]`);
+            if (tag) {
+                tag.remove();
+                const container = document.getElementById('selected-methods-list');
+                if (!container.children.length) {
+                    container.innerHTML = '<p class="text-muted">No methods selected</p>';
+                }
+            }
+        }
+
+        async function saveChanges() {
             try {
                 toggleLoading(true);
+                const selectedMethods = Array.from(document.querySelectorAll('#selected-methods-list .method-tag'))
+                    .map(tag => parseInt(tag.getAttribute('data-id')));
 
-                const selectedMethods = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
-                    .map(checkbox => checkbox.value);
-
-                if (selectedMethods.length === 0) {
+                if (!selectedMethods.length) {
                     showError("Please select at least one cooking method");
                     return;
                 }
 
-                const response = await fetch('./api/v1/cooking-methods/update', {
+                const response = await fetch('/Yumster/api/v1/cooking-methods/update', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     credentials: 'include',
-                    body: JSON.stringify({ methods: selectedMethods })
+                    body: JSON.stringify({ methodIds: selectedMethods })
                 });
 
                 const data = await response.json();
-                
                 if (data.status === 'success') {
-                    showSuccess("Setup completed successfully!");
+                    showSuccess("Cooking methods updated successfully!");
                     setTimeout(() => window.location.href = "home.html", 1500);
-                } else {
-                    showError(data.message || "Failed to save cooking methods");
                 }
             } catch (error) {
-                showError("An error occurred while saving preferences");
+                showError("Failed to save cooking methods");
             } finally {
                 toggleLoading(false);
             }
-        });
-
+        }
         function goBack() {
             window.location.href = "favorites.html";
         }

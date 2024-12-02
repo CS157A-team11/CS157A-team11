@@ -178,7 +178,6 @@
 
                 const data = await response.json();
                 console.log(data)
-                alert("SAI");
                 if (data.status === "success") {
                     // Store user context
                     sessionStorage.setItem('username', data.username);

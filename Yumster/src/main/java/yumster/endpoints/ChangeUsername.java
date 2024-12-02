@@ -8,6 +8,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import com.google.gson.JsonObject;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -18,91 +19,135 @@ import yumster.dao.UserTokenDaoImpl;
 import yumster.helper.Response;
 import yumster.obj.User;
 import yumster.obj.UserToken;
+import yumster.dao.ChangeUsernameDao;
+import yumster.dao.ChangeUsernameDaoImpl;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Servlet implementation class Register
  */
-@WebServlet("/api/v1/change-username")
+
+
+@WebServlet("/api/v1/change-username/*")
 @MultipartConfig
 public class ChangeUsername extends HttpServlet {
-	private static final long serialVersionUID = 1L;
+ private static final long serialVersionUID = 1L;
+ private static final Log log = LogFactory.getLog(ChangeUsername.class);
+ // Change to interface type
+ private final ChangeUsernameDao changeUsernameDao;
+ 
+ public ChangeUsername() {
+     super();
+     // Initialize in constructor
+     this.changeUsernameDao = new ChangeUsernameDaoImpl();
+ }
 
-	/**
-	 * @see HttpServlet#HttpServlet()
-	 */
-	public ChangeUsername() {
-		super();
-		// TODO Auto-generated constructor stub
-	}
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) 
+            throws ServletException, IOException {
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        
+        try {
+            User user = authenticateUser(request);
+            if (user == null) {
+                sendError(response, "Unauthorized", HttpServletResponse.SC_UNAUTHORIZED);
+                return;
+            }
 
-	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse
-	 *      response)
-	 */
-	protected void doGet(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		response.getWriter().append("Served at: ").append(request.getContextPath());
-	}
-	
-	/**
-	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse
-	 *      response)
-	 */
-	protected void doPost(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
-		response.setContentType("application/json");
-		UserDao userDao = new UserDaoImpl();
-		UserTokenDao userTokenDao = new UserTokenDaoImpl();
-		
-		Cookie[] cookies = request.getCookies();
-		if (cookies == null) {
-			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-			Response res = new Response("error", "Unauthenticated");
-			response.getWriter().print(res.toJson());
-			return;
-		}
-		User user = null;
-		for (int i = 0; i < cookies.length; i++) {
-			String name = cookies[i].getName();
-			String value = cookies[i].getValue();
+            User currentUser = changeUsernameDao.getCurrentUsername(user.getId());
+            if (currentUser != null) {
+                JsonObject jsonResponse = new JsonObject();
+                jsonResponse.addProperty("status", "success");
+                jsonResponse.addProperty("username", currentUser.getUname());
+                response.getWriter().write(jsonResponse.toString());
+            } else {
+                sendError(response, "User not found", HttpServletResponse.SC_NOT_FOUND);
+            }
+        } catch (Exception e) {
+            log.error("Error in doGet: " + e.getMessage());
+            sendError(response, "Internal server error", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
 
-			if (name.equals("token")) {
-				UserToken userToken = userTokenDao.getByToken(value);
-				if (userToken != null) {
-					user = userDao.getById(userToken.getUserId());
-				} 
-			}
-		}
-		if (user == null) {
-			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-			Response res = new Response("error", "Unauthenticated");
-			response.getWriter().print(res.toJson());
-			return;
-		}
-		
-		String newUsername = request.getParameter("uname").trim();
-		if (StringUtils.isEmpty(newUsername)) {
-			Response res = new Response("error", "Required Field not filled.");
-			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-			response.getWriter().print(res.toJson());
-			return;
-		}
-	
-		if (userDao.checkExists(newUsername)) {
-			Response res = new Response("error", "Username already taken.");
-			response.getWriter().print(res.toJson());
-			return;
-		}
-		
-		boolean result = userDao.updateUsername(newUsername, user);
-		
-		Response res = new Response();
-		if (!result) {
-			res.setStatus("error");
-			res.setDescription("Failed to change username");
-		}
-		response.getWriter().print(res.toJson());
-	}
-	
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) 
+            throws ServletException, IOException {
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        
+        try {
+            // Get authenticated user
+            User user = authenticateUser(request);
+            if (user == null) {
+                sendError(response, "Unauthorized access", HttpServletResponse.SC_UNAUTHORIZED);
+                return;
+            }
+
+            String newUsername = request.getParameter("new_username");
+            String currentUsername = request.getParameter("current_username");
+
+            if (StringUtils.isEmpty(newUsername) || StringUtils.isEmpty(currentUsername)) {
+                sendError(response, "Required fields not filled", HttpServletResponse.SC_BAD_REQUEST);
+                return;
+            }
+
+            if (!currentUsername.equals(user.getUname())) {
+                sendError(response, "Current username is incorrect", HttpServletResponse.SC_BAD_REQUEST);
+                return;
+            }
+
+            UserDaoImpl userDao = new UserDaoImpl();
+            if (userDao.checkExists("", newUsername)) {
+                sendError(response, "Username already taken", HttpServletResponse.SC_BAD_REQUEST);
+                return;
+            }
+
+            boolean updated = userDao.updateUsername(newUsername, user.getId());
+            if (!updated) {
+                sendError(response, "Failed to update username", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                return;
+            }
+
+            JsonObject jsonResponse = new JsonObject();
+            jsonResponse.addProperty("status", "success");
+            jsonResponse.addProperty("message", "Username updated successfully");
+            jsonResponse.addProperty("newUsername", newUsername);
+            response.getWriter().write(jsonResponse.toString());
+
+        } catch (Exception e) {
+            log.error("Error in change username: " + e.getMessage(), e);
+            e.printStackTrace();
+            sendError(response, "Internal server error", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private User authenticateUser(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies == null) return null;
+
+        UserDao userDao = new UserDaoImpl();
+        UserTokenDao tokenDao = new UserTokenDaoImpl();
+
+        for (Cookie cookie : cookies) {
+            if ("token".equals(cookie.getName())) {
+                UserToken token = tokenDao.getByToken(cookie.getValue());
+                if (token != null) {
+                    return userDao.getById(token.getUserId());
+                }
+            }
+        }
+        return null;
+    }
+
+    private void sendError(HttpServletResponse response, String message, int status) 
+            throws IOException {
+        response.setStatus(status);
+        JsonObject error = new JsonObject();
+        error.addProperty("status", "error");
+        error.addProperty("message", message);
+        response.getWriter().write(error.toString());
+    }
 }

@@ -24,8 +24,7 @@ public class UserTokenDaoImpl implements UserTokenDao {
 		DbConnection dbCon = new DbConnection();
 		Connection con = dbCon.getConnection();
 		String sql = "INSERT INTO usertokens (userToken, userId, expiration) VALUES (?,?,?);";
-		try {
-			PreparedStatement ps = con.prepareStatement(sql);
+		try (PreparedStatement ps = con.prepareStatement(sql)) {
 			ps.setString(1, token);
 			ps.setInt(2, userId);
 			ps.setLong(3, expiration);
@@ -51,8 +50,7 @@ public class UserTokenDaoImpl implements UserTokenDao {
 		DbConnection dbCon = new DbConnection();
 		Connection con = dbCon.getConnection();
 		String sql = "SELECT userId, expiration from usertokens WHERE userToken = ?;";
-		try {
-			PreparedStatement ps = con.prepareStatement(sql);
+		try (PreparedStatement ps = con.prepareStatement(sql)) {
 			ps.setString(1, token);
 			ResultSet rs = ps.executeQuery();
 			if (rs != null) {
@@ -88,8 +86,7 @@ public class UserTokenDaoImpl implements UserTokenDao {
 		DbConnection dbCon = new DbConnection();
 		Connection con = dbCon.getConnection();
 		String sql = "DELETE FROM usertokens WHERE userToken = ?;";
-		try {
-			PreparedStatement ps = con.prepareStatement(sql);
+		try (PreparedStatement ps = con.prepareStatement(sql)) {
 			ps.setString(1, token);
 			int rowsAffected = ps.executeUpdate();
 	        if(rowsAffected == 1) {

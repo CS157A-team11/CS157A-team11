@@ -178,20 +178,20 @@ public class UserDaoImpl implements UserDao {
 	public boolean updateUsername(String username, int userId) {
 	    DbConnection dbCon = new DbConnection();
 	    Connection con = dbCon.getConnection();
-	    String sql = "UPDATE users SET Username = ? WHERE UserId = ?";
-	    try {
-	        PreparedStatement ps = con.prepareStatement(sql);
+	    String sql = "UPDATE users SET username = ? WHERE userId = ?";
+	    try (PreparedStatement ps = con.prepareStatement(sql)) {
 	        ps.setString(1, username);
 	        ps.setInt(2, userId);
 	        int rowsAffected = ps.executeUpdate();
+	        
 	        if(rowsAffected == 1) {
 	            return true;
 	        } else {
-	        	log.error("Expected exactly one update from updateUsername got " + rowsAffected);
+	            log.error("Expected exactly one update from updateUsername got " + rowsAffected);
 	            return false;
 	        }
 	    } catch (SQLException e) {
-	        e.printStackTrace();
+	        log.error("Error updating username: " + e.getMessage());
 	        return false;
 	    }
 	};
@@ -199,7 +199,7 @@ public class UserDaoImpl implements UserDao {
 	public boolean updatePassword(String newPasswordHash, int userId) {
 	    DbConnection dbCon = new DbConnection();
 	    Connection con = dbCon.getConnection();
-	    String sql = "UPDATE users SET PasswordHash = ? WHERE UserId = ?";
+	    String sql = "UPDATE users SET passwordHash = ? WHERE userId = ?";
 	    try {
 	        PreparedStatement ps = con.prepareStatement(sql);
 	        ps.setString(1, newPasswordHash);
@@ -209,12 +209,11 @@ public class UserDaoImpl implements UserDao {
 	        if(rowsAffected == 1) {
 	            return true;
 	        } else {
-	            System.out.println("Expected exactly one update from updatePassword got " + rowsAffected);
+	            log.error("Expected exactly one update from updatePassword got " + rowsAffected);
 	            return false;
 	        }
-	        
 	    } catch (SQLException e) {
-	        e.printStackTrace();
+	        log.error("Error updating password: " + e.getMessage());
 	        return false;
 	    }
 	};

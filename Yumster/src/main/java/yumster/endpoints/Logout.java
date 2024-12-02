@@ -21,69 +21,54 @@ import yumster.obj.UserToken;
 @WebServlet("/api/v1/logout")
 @MultipartConfig
 public class Logout extends HttpServlet {
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	/**
-	 * @see HttpServlet#HttpServlet()
-	 */
-	public Logout() {
-		super();
-		// TODO Auto-generated constructor stub
-	}
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        response.setContentType("application/json");
+        UserDaoImpl userDao = new UserDaoImpl();
+        UserTokenDaoImpl userTokenDao = new UserTokenDaoImpl();
 
-	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse
-	 *      response)
-	 */
-	protected void doGet(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
-		response.setContentType("application/json");
-		UserDaoImpl userDao = new UserDaoImpl();
-		UserTokenDaoImpl userTokenDao = new UserTokenDaoImpl();
+        Cookie[] cookies = request.getCookies();
+        if (cookies == null) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            Response res = new Response("error", "Unauthenticated");
+            response.getWriter().print(res.toJson());
+            return;
+        }
 
-		Cookie[] cookies = request.getCookies();
-		if (cookies == null) {
-			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-			Response res = new Response("error", "Unauthenticated");
-			response.getWriter().print(res.toJson());
-			return;
-		}
-		User user = null;
-		UserToken userToken = null;
-		for (int i = 0; i < cookies.length; i++) {
-			String name = cookies[i].getName();
-			String value = cookies[i].getValue();
+        UserToken userToken = null;
+        for (Cookie cookie : cookies) {
+            if ("token".equals(cookie.getName())) {
+                userToken = userTokenDao.getByToken(cookie.getValue());
+                break;
+            }
+        }
 
-			if (name.equals("token")) {
-				userToken = userTokenDao.getByToken(value);
-				if (userToken != null) {
-					user = userDao.getById(userToken.getUserId());
-				}
-			}
-		}
-		if (user == null) {
-			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-			Response res = new Response("error", "Unauthenticated");
-			response.getWriter().print(res.toJson());
-			return;
-		}
-		
-		userTokenDao.deleteToken(userToken.getToken());
-		Cookie cookie = new Cookie("token", "");
-		cookie.setMaxAge(0);
-		response.addCookie(cookie);
-		
-		Response res = new Response();
-		response.getWriter().print(res.toJson());
-	}
+        if (userToken == null) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            Response res = new Response("error", "Invalid token");
+            response.getWriter().print(res.toJson());
+            return;
+        }
 
-	/**
-	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse
-	 *      response)
-	 */
-	protected void doPost(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
-		response.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
-	}
+        // Delete token from database
+        userTokenDao.deleteToken(userToken.getToken());
 
+        // Clear cookie
+        Cookie cookie = new Cookie("token", "");
+        cookie.setPath("/");  // Important: set the same path as when creating
+        cookie.setMaxAge(0);
+        response.addCookie(cookie);
+
+        Response res = new Response("success", "Logged out successfully");
+        response.getWriter().print(res.toJson());
+    }
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        response.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+    }
 }

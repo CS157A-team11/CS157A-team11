@@ -28,6 +28,7 @@ import yumster.obj.User;
  */
 @WebServlet("/api/v1/login")
 @MultipartConfig
+
 public class Login extends HttpServlet {
 	Argon2PasswordEncoder encoder = Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();
 	Encoder b64encoder = Base64.getEncoder();

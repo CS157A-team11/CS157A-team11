@@ -24,8 +24,7 @@ public class EmailVerificationDaoImpl implements EmailVerificationDao {
 		DbConnection dbCon = new DbConnection();
 		Connection con = dbCon.getConnection();
 		String sql = "INSERT INTO emailverification (code, userId, expirationtime) VALUES (?,?,?);";
-		try {
-			PreparedStatement ps = con.prepareStatement(sql);
+		try (PreparedStatement ps = con.prepareStatement(sql)) {
 			ps.setString(1, token);
 			ps.setInt(2, userId);
 			ps.setLong(3, expiration);
@@ -51,8 +50,7 @@ public class EmailVerificationDaoImpl implements EmailVerificationDao {
 		DbConnection dbCon = new DbConnection();
 		Connection con = dbCon.getConnection();
 		String sql = "SELECT userId, expirationtime from emailverification WHERE code = ?;";
-		try {
-			PreparedStatement ps = con.prepareStatement(sql);
+		try (PreparedStatement ps = con.prepareStatement(sql)) {
 			ps.setString(1, token);
 			ResultSet rs = ps.executeQuery();
 			if (rs != null) {
@@ -82,8 +80,7 @@ public class EmailVerificationDaoImpl implements EmailVerificationDao {
 		DbConnection dbCon = new DbConnection();
 		Connection con = dbCon.getConnection();
 		String sql = "SELECT MAX(expirationtime) from emailverification WHERE userId = ?;";
-		try {
-			PreparedStatement ps = con.prepareStatement(sql);
+		try (PreparedStatement ps = con.prepareStatement(sql)) {
 			ps.setInt(1, userId);
 			ResultSet rs = ps.executeQuery();
 			if (rs != null) {
@@ -109,8 +106,7 @@ public class EmailVerificationDaoImpl implements EmailVerificationDao {
 		DbConnection dbCon = new DbConnection();
 		Connection con = dbCon.getConnection();
 		String sql = "DELETE FROM emailverification WHERE code = ?;";
-		try {
-			PreparedStatement ps = con.prepareStatement(sql);
+		try (PreparedStatement ps = con.prepareStatement(sql)) {
 			ps.setString(1, token);
 			int rowsAffected = ps.executeUpdate();
 	        if(rowsAffected == 1) {
