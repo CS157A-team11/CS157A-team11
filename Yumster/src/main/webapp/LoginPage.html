@@ -69,6 +69,7 @@
         /* New styles for enhanced functionality */
         .loading-overlay {
             position: fixed;
+            flex-direction: column;
             top: 0;
             left: 0;
             width: 100%;
@@ -113,9 +114,8 @@
 </head>
 <body>
     <div class="loading-overlay" id="loadingOverlay">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
+        <div class="spinner-border text-primary" role="status"></div>
+	    <span class="visually-hidden">Loading...</span>
     </div>
 
     <div class="login-container">
