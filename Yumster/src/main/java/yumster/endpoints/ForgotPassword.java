@@ -30,7 +30,7 @@ import yumster.obj.User;
 @MultipartConfig
 public class ForgotPassword extends HttpServlet {
 	Argon2PasswordEncoder encoder = Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();
-	Encoder b64encoder = Base64.getEncoder();
+	Encoder b64encoder = Base64.getUrlEncoder();
     SecureRandom random = new SecureRandom();
 	private static final long serialVersionUID = 1L;
 	
@@ -80,6 +80,13 @@ public class ForgotPassword extends HttpServlet {
 		} else {
 			// Handle as email
 			user = userDao.getByEmail(usernameEmail);
+		}
+		
+		// vulnerable to timing attacks, but this is PoC
+		if (user == null) {
+			Response res = new Response();
+			response.getWriter().print(res.toJson());
+			return;
 		}
 		
 		int ENFORCED_DELAY = 120; // seconds = 2 min

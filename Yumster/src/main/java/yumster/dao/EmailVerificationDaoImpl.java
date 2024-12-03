@@ -53,12 +53,10 @@ public class EmailVerificationDaoImpl implements EmailVerificationDao {
 		try (PreparedStatement ps = con.prepareStatement(sql)) {
 			ps.setString(1, token);
 			ResultSet rs = ps.executeQuery();
-			if (rs != null) {
-				rs.next();
+			if (rs.next()) {
 				// check validity
 				if (rs.getLong(2) > (System.currentTimeMillis() / 1000L))  {
 					EmailVerification verifToken = new EmailVerification(rs.getInt(1), token, rs.getLong(2));
-					rs.next();
 					if (rs.next()) {
 						return null;
 					}
