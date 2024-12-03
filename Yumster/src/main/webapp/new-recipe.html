@@ -95,6 +95,14 @@
                     <label for="recipe-servings" class="form-label">Servings</label>
                     <input type="number" class="form-control" id="recipe-servings" name="servings" required>
                 </div>
+                <div class="card mb-4">
+                    <h4 class="card-title">Available Cooking Methods</h4>
+	                <div class="card-body">
+	                    <div class="mb-3 checkbox-grid" id="methods-container">
+	                        <!-- Methods will be populated here -->
+	                    </div>
+	                </div>
+	            </div>
                 <label for="new-username" class="form-label">Ingredients</label>
                 <div id="ingredients-div">
 	                <div class="mb-3 input-group" style="align-items: center;">
@@ -115,7 +123,7 @@
 	                </div>
 	            </div>
                 <div class="text-center">
-                    <button type="submit" id="change-btn" class="btn btn-primary">Change Username</button>
+                    <button type="submit" id="change-btn" class="btn btn-primary">Submit</button>
                     <button type="button" class="btn btn-secondary" onclick="handleCancel()">Cancel</button>
                 </div>
             </form>
@@ -182,6 +190,33 @@
             }
         });
 
+        const cookingMethods = [
+            'Boiling',    // ID: 1
+            'Grilling',   // ID: 2
+            'Frying',     // ID: 3
+            'Baking',     // ID: 4
+            'Roasting',   // ID: 5
+            'Steaming',   // ID: 6
+            'Sauteing',   // ID: 7
+            'Broiling',   // ID: 8
+            'Poaching',   // ID: 9
+            'Simmering'   // ID: 10
+        ];
+        
+        function populateMethods() {
+            const container = document.getElementById('methods-container');
+            cookingMethods.forEach(method => {
+                const div = document.createElement('div');
+                div.className = 'form-check';
+                div.innerHTML = `
+                    <input class="form-check-input" type="checkbox" value="${method}" id="${method.toLowerCase()}">
+                    <label class="form-check-label" for="${method.toLowerCase()}">${method}</label>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+
     function handleCancel() {
         window.location.href = returnUrl;
     }
@@ -208,6 +243,7 @@
 
     // Initialize page
     checkAuth();
+    populateMethods();
 </script>
 
 </body>
