@@ -1,6 +1,9 @@
 package yumster.endpoints;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
@@ -15,8 +18,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 
-import yumster.dao.UserDao;
-import yumster.dao.UserTokenDao;
 import yumster.dao.UserDaoImpl;
 import yumster.dao.UserTokenDaoImpl;
 import yumster.dao.RecipeDao;
@@ -28,11 +29,15 @@ import yumster.obj.UserToken;
 /**
  * Servlet implementation class Register
  */
-@WebServlet("/api/v1/recipe/*")
+@WebServlet("/api/v1/image/*")
 @MultipartConfig
 
-public class Recipe extends HttpServlet {
+public class Image extends HttpServlet {
 	private static final long serialVersionUID = 1L;
+	public static final String PATH = "C:/";
+	
+    // Constructors
+    public Image() {}
 
 	/**
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse
@@ -42,6 +47,8 @@ public class Recipe extends HttpServlet {
 			throws ServletException, IOException {
 		response.setContentType("application/json");
 		RecipeDao recipeDao = new RecipeDaoImpl();
+		
+		
 
 		String getIdString = request.getPathInfo(); // remove prepending /
 		if (StringUtils.isEmpty(getIdString)) {
@@ -61,21 +68,12 @@ public class Recipe extends HttpServlet {
 			return;
 		}
 		
-		yumster.obj.Recipe recipe = recipeDao.getById(getId);
-		
-		if (recipe == null) {
-			Response res = new Response("error", "Invalid ID");
-			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-			response.getWriter().print(res.toJson());
-			return;
-		}
-		// recipe w/id exists
-		Response res = new Response();
-		Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
-		JsonElement jsonElement = gson.toJsonTree(res);
-		System.out.println(jsonElement.toString());
-		jsonElement.getAsJsonObject().add("data", gson.toJsonTree(recipe));
-		response.getWriter().print(gson.toJson(jsonElement));
+        String filename = request.getPathInfo().substring(1);
+        File file = new File(PATH,filename);
+        response.setHeader("Content-Type", getServletContext().getMimeType(filename));
+        response.setHeader("Content-Length",String.valueOf(file.length()));
+        response.setHeader("Content-Disposition","inline; filename=\""+filename +"\"");
+        Files.copy(file.toPath(),response.getOutputStream());
 	}
 	
 	/**
@@ -85,8 +83,8 @@ public class Recipe extends HttpServlet {
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		response.setContentType("application/json");
-		UserDao userDao = new UserDaoImpl();
-		UserTokenDao userTokenDao = new UserTokenDaoImpl();
+		UserDaoImpl userDao = new UserDaoImpl();
+		UserTokenDaoImpl userTokenDao = new UserTokenDaoImpl();
 		RecipeDao recipeDao = new RecipeDaoImpl();
 		
 		Cookie[] cookies = request.getCookies();
@@ -141,19 +139,14 @@ public class Recipe extends HttpServlet {
 		}
 		
 		yumster.obj.Recipe recipe = new yumster.obj.Recipe();
-		recipe.setUserId(user.getId());
 		recipe.setName(name);
 		recipe.setInstructions(instructions);
 		recipe.setTime(timeInt);
 		recipe.setServings(servingsInt);
 		
 		if (recipeDao.insert(recipe)) {			
-			recipe = recipeDao.getLatestByUserId(user.getId());
 			Response res = new Response();
-			Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
-			JsonElement jsonElement = gson.toJsonTree(res);
-			jsonElement.getAsJsonObject().addProperty("recipeId", recipe.getId());
-			response.getWriter().print(gson.toJson(jsonElement));
+			response.getWriter().print(res.toJson());
 			return;
 		};
 		
@@ -162,124 +155,12 @@ public class Recipe extends HttpServlet {
 		response.getWriter().print(res.toJson());
 	}
 	
-	protected void doPut(HttpServletRequest request, HttpServletResponse response) 
-		throws ServletException, IOException {
-		response.setContentType("application/json");
-		UserDao userDao = new UserDaoImpl();
-		UserTokenDao userTokenDao = new UserTokenDaoImpl();
-		RecipeDao recipeDao = new RecipeDaoImpl();
-		
-		Cookie[] cookies = request.getCookies();
-		if (cookies == null) {
-			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-			Response res = new Response("error", "Unauthenticated");
-			response.getWriter().print(res.toJson());
-			return;
-		}
-		User user = null;
-		for (int i = 0; i < cookies.length; i++) {
-			String name = cookies[i].getName();
-			String value = cookies[i].getValue();
-
-			if (name.equals("token")) {
-				UserToken userToken = userTokenDao.getByToken(value);
-				if (userToken != null) {
-					user = userDao.getById(userToken.getUserId()); // here because scoping
-				} 
-			}
-		}
-		if (user == null) {
-			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-			Response res = new Response("error", "Unauthenticated");
-			response.getWriter().print(res.toJson());
-			return;
-		}
-		
-		// authenticated
-
-		String getIdString = request.getPathInfo(); // remove prepending /
-		if (StringUtils.isEmpty(getIdString)) {
-			Response res = new Response("error", "Required Field not filled.");
-			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-			response.getWriter().print(res.toJson());
-			return;
-		}
-		getIdString = getIdString.substring(1);
-		Integer getId;
-		try {
-			getId = Integer.valueOf(getIdString); 	
-		} catch (NumberFormatException e) {
-			Response res = new Response("error", "Invalid ID");
-			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-			response.getWriter().print(res.toJson());
-			return;
-		}
-		
-		yumster.obj.Recipe recipe = recipeDao.getById(getId);
-		
-		if (recipe == null) {
-			Response res = new Response("error", "Invalid ID");
-			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-			response.getWriter().print(res.toJson());
-			return;
-		}
-		
-		// recipe exists
-		
-		if (recipe.getUserId() != user.getId()) {
-			Response res = new Response("error", "Invalid ID");
-			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-			response.getWriter().print(res.toJson());
-			return;
-		}
-		
-		// is owner of recipe
-		
-		String name = request.getParameter("name").trim();
-		String instructions = request.getParameter("instructions").trim();
-		String time = request.getParameter("time").trim();
-		String servings = request.getParameter("servings").trim();
-
-		if (StringUtils.isEmpty(name) || StringUtils.isEmpty(instructions) ||
-				StringUtils.isEmpty(time) || StringUtils.isEmpty(servings)) {
-			Response res = new Response("error", "Required Field not filled.");
-			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-			response.getWriter().print(res.toJson());
-			return;
-		}
-		
-		Integer timeInt, servingsInt;
-		try {
-			timeInt = Integer.valueOf(time);
-			servingsInt = Integer.valueOf(servings);
-		} catch (NumberFormatException e) {
-			Response res = new Response("error", "Invalid ID");
-			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-			response.getWriter().print(res.toJson());
-			return;
-		}
-		
-		recipe.setName(name);
-		recipe.setInstructions(instructions);
-		recipe.setTime(timeInt);
-		recipe.setServings(servingsInt);
-		
-		if (recipeDao.update(recipe)) {			
-			Response res = new Response();
-			response.getWriter().print(res.toJson());
-			return;
-		};
-		
-		Response res = new Response("error", "Internal Server Error");
-		response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-		response.getWriter().print(res.toJson());
-	}
 	
 	protected void doDelete(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		response.setContentType("application/json");
-		UserDao userDao = new UserDaoImpl();
-		UserTokenDao userTokenDao = new UserTokenDaoImpl();
+		UserDaoImpl userDao = new UserDaoImpl();
+		UserTokenDaoImpl userTokenDao = new UserTokenDaoImpl();
 		RecipeDao recipeDao = new RecipeDaoImpl();
 		
 		Cookie[] cookies = request.getCookies();
@@ -350,15 +231,4 @@ public class Recipe extends HttpServlet {
 		return;
 		
 	}
-//		  @Override
-//		    public String toString() {
-//		        return "Recipe{" +
-//		            "id=" + id +
-//		            ", name='" + name + '\'' +
-//		            ", instructions='" + instructions + '\'' +
-//		            ", time=" + time +
-//		            ", servings=" + servings +
-//		            ", userId=" + userId +
-//		            '}';
-//		    }
-		}
+}

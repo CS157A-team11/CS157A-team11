@@ -83,6 +83,62 @@ public class RecipeDaoImpl implements RecipeDao {
         }
     }
     
+    public boolean update(Recipe recipe) {
+        Connection con = null;
+        PreparedStatement ps = null;
+        
+        try {
+            DbConnection dbCon = new DbConnection();
+            con = dbCon.getConnection();
+            String sql = "UPDATE recipes SET Name = ?, Instructions = ?, Time = ?, Servings = ? WHERE recipeId = ?;";
+            ps = con.prepareStatement(sql);
+            ps.setString(1, recipe.getName());
+            ps.setString(2, recipe.getInstructions());
+            ps.setInt(3, recipe.getTime());
+            ps.setInt(4, recipe.getServings());
+            ps.setInt(5, recipe.getId());
+            
+            int rowsAffected = ps.executeUpdate();
+            return rowsAffected == 1;
+        } catch (SQLException e) {
+            log.error("Error updating recipe: " + e.getMessage(), e);
+            return false;
+        } finally {
+            closeResources(null, ps, con);
+        }
+    }
+    
+    public Recipe getLatestByUserId(Integer id) {
+        Connection con = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        
+        try {
+            DbConnection dbCon = new DbConnection();
+            con = dbCon.getConnection();
+            String sql = "SELECT RecipeID, Name, Instructions, Time, Servings, UserID FROM recipes WHERE userID = ? ORDER BY recipeID DESC;";
+            ps = con.prepareStatement(sql);
+            ps.setInt(1, id);
+            rs = ps.executeQuery();
+            
+            if (rs.next()) {
+                Recipe recipe = new Recipe();
+                recipe.setId(rs.getInt("RecipeID"));
+                recipe.setName(rs.getString("Name"));
+                recipe.setInstructions(rs.getString("Instructions"));
+                recipe.setTime(rs.getInt("Time"));
+                recipe.setServings(rs.getInt("Servings"));
+                recipe.setUserId(rs.getInt("UserID"));
+                return recipe;
+            }
+        } catch (SQLException e) {
+            log.error("Error getting recipe by ID: " + e.getMessage(), e);
+        } finally {
+            closeResources(rs, ps, con);
+        }
+        return null;
+    }
+    
     public Recipe getById(Integer id) {
         Connection con = null;
         PreparedStatement ps = null;

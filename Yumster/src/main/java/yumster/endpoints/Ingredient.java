@@ -28,10 +28,10 @@ import yumster.obj.UserToken;
 /**
  * Servlet implementation class Register
  */
-@WebServlet("/api/v1/recipe/*")
+@WebServlet("/api/v1/ingredient/*")
 @MultipartConfig
 
-public class Recipe extends HttpServlet {
+public class Ingredient extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 
 	/**

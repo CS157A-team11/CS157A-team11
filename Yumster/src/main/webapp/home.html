@@ -322,7 +322,7 @@ function populateCookingMethodFilters(methods) {
                 const sortBy = document.getElementById('sortSelect').value;
                 
                 const response = await fetch(`/Yumster/api/v1/recipes?page=${page}&limit=${recipesPerPage}&sort=${sortBy}`,  {
-                    method: 'POST',
+                    method: 'GET',
                     headers: {
                         'Content-Type': 'application/json'
                     },
