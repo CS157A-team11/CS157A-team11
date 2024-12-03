@@ -134,7 +134,7 @@ public class Recipe extends HttpServlet {
 			timeInt = Integer.valueOf(time);
 			servingsInt = Integer.valueOf(servings);
 		} catch (NumberFormatException e) {
-			Response res = new Response("error", "Invalid ID");
+			Response res = new Response("error", "Invalid Numbers");
 			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 			response.getWriter().print(res.toJson());
 			return;
