@@ -8,4 +8,5 @@ import yumster.obj.Ingredient;
 public interface IngredientDao {
     List<Ingredient> getIngredientByKeywords(List<String> keywords);
     Ingredient getIngredientById(int id);
+    List<Ingredient> getIngredientsByRecipeId(int id);
 }

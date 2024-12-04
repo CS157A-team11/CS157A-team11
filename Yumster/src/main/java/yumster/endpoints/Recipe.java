@@ -1,6 +1,9 @@
 package yumster.endpoints;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
+import java.util.List;
+
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
@@ -14,6 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
+import com.google.gson.reflect.TypeToken;
 
 import yumster.dao.UserDao;
 import yumster.dao.UserTokenDao;
@@ -21,6 +25,8 @@ import yumster.dao.UserDaoImpl;
 import yumster.dao.UserTokenDaoImpl;
 import yumster.dao.RecipeDao;
 import yumster.dao.RecipeDaoImpl;
+import yumster.dao.IngredientDao;
+import yumster.dao.IngredientDaoImpl;
 import yumster.helper.Response;
 import yumster.obj.User;
 import yumster.obj.UserToken;
@@ -42,6 +48,7 @@ public class Recipe extends HttpServlet {
 			throws ServletException, IOException {
 		response.setContentType("application/json");
 		RecipeDao recipeDao = new RecipeDaoImpl();
+		IngredientDao ingredientDao = new IngredientDaoImpl();
 
 		String getIdString = request.getPathInfo(); // remove prepending /
 		if (StringUtils.isEmpty(getIdString)) {
@@ -62,6 +69,7 @@ public class Recipe extends HttpServlet {
 		}
 		
 		yumster.obj.Recipe recipe = recipeDao.getById(getId);
+		List<yumster.obj.Ingredient> ingredients = ingredientDao.getIngredientsByRecipeId(getId);
 		
 		if (recipe == null) {
 			Response res = new Response("error", "Invalid ID");
@@ -73,8 +81,8 @@ public class Recipe extends HttpServlet {
 		Response res = new Response();
 		Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
 		JsonElement jsonElement = gson.toJsonTree(res);
-		System.out.println(jsonElement.toString());
 		jsonElement.getAsJsonObject().add("data", gson.toJsonTree(recipe));
+		jsonElement.getAsJsonObject().add("ingredients", gson.toJsonTree(ingredients));
 		response.getWriter().print(gson.toJson(jsonElement));
 	}
 	
@@ -120,15 +128,31 @@ public class Recipe extends HttpServlet {
 		String instructions = request.getParameter("instructions").trim();
 		String time = request.getParameter("time").trim();
 		String servings = request.getParameter("servings").trim();
+		String quantity_json = request.getParameter("quantity").trim();
+		String ingredients_json = request.getParameter("ingredients").trim();
+		
 
 		if (StringUtils.isEmpty(name) || StringUtils.isEmpty(instructions) ||
-				StringUtils.isEmpty(time) || StringUtils.isEmpty(servings)) {
+				StringUtils.isEmpty(time) || StringUtils.isEmpty(servings) ||
+				StringUtils.isEmpty(quantity_json) || StringUtils.isEmpty(ingredients_json)) {
 			Response res = new Response("error", "Required Field not filled.");
 			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 			response.getWriter().print(res.toJson());
 			return;
 		}
 		
+		Gson gsonParser = new Gson();
+		Type listType = new TypeToken<List<Integer>>(){}.getType();
+		List<Integer> quantity = gsonParser.fromJson(quantity_json, listType);
+		List<Integer> ingredients = gsonParser.fromJson(ingredients_json, listType);
+		
+		if (quantity.size() != ingredients.size() || quantity.size() == 0) {
+			Response res = new Response("error", "Required Field not filled or incorrectly filled.");
+			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			response.getWriter().print(res.toJson());
+			return;
+		}
+
 		Integer timeInt, servingsInt;
 		try {
 			timeInt = Integer.valueOf(time);
@@ -149,6 +173,7 @@ public class Recipe extends HttpServlet {
 		
 		if (recipeDao.insert(recipe)) {			
 			recipe = recipeDao.getLatestByUserId(user.getId());
+			
 			Response res = new Response();
 			Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
 			JsonElement jsonElement = gson.toJsonTree(res);
@@ -350,15 +375,4 @@ public class Recipe extends HttpServlet {
 		return;
 		
 	}
-//		  @Override
-//		    public String toString() {
-//		        return "Recipe{" +
-//		            "id=" + id +
-//		            ", name='" + name + '\'' +
-//		            ", instructions='" + instructions + '\'' +
-//		            ", time=" + time +
-//		            ", servings=" + servings +
-//		            ", userId=" + userId +
-//		            '}';
-//		    }
-		}
+}

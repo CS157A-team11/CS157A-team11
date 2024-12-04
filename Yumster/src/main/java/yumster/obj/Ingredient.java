@@ -1,12 +1,15 @@
 package yumster.obj;
 
+import com.google.gson.annotations.Expose;
+
 public class Ingredient {
-    private int ingredientId;     // Primary key
-    private String ingredientName;
-    private int energy; //kcals
-    private String foodCategory, dataType;
-    private double totalFat, transFat, polyUnsatFat, monoUnsatFat, satFat, sodium, totalCarbs;
-    private double dietaryFiber, totalSugar, addedSugar, protein;
+    @Expose private int ingredientId; // Primary key
+    @Expose private String ingredientName;
+    @Expose private int energy; //kcals
+    @Expose private String foodCategory, dataType;
+    @Expose private double totalFat, transFat, polyUnsatFat, monoUnsatFat, satFat, sodium, totalCarbs;
+    @Expose private double dietaryFiber, totalSugar, addedSugar, protein;
+    @Expose private int quantity;
     // Constructors
     public Ingredient(int ingredientId, String ingredientName, int energy, String foodCategory, String dataType,
     		double totalFat, double transFat, double polyUnsatFat, double monoUnsatFat, double satFat, double sodium,
@@ -160,5 +163,13 @@ public class Ingredient {
 
     public void setProtein(double protein) {
         this.protein = protein;
+    }
+    
+    public int getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
     }
 }
