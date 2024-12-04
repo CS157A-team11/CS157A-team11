@@ -109,4 +109,42 @@ public class IngredientDaoImpl implements IngredientDao {
         }
         return null;
     }
+    
+    public List<Recipe> getRecipesByDietaryRestrictions(int userId) {
+        List<Recipe> recipes = new ArrayList<>();
+
+        String sql = "SELECT recipeID\r\n"
+        		+ "FROM recipes\r\n"
+        		+ "WHERE RecipeID NOT IN(\r\n"
+        		+ "	SELECT DISTINCT RecipeID\r\n"
+        		+ "    FROM recipe_ingredients\r\n"
+        		+ "    WHERE IngredientID IN (\r\n"
+        		+ "		SELECT IngredientID\r\n"
+        		+ "        FROM users_ingredients\r\n"
+        		+ "        WHERE UserID = 2));";
+
+        try {
+            DbConnection dbCon = new DbConnection();
+            Connection con = dbCon.getConnection();
+
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
+                ps.setInt(1, userId);
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        Recipe recipe = new Recipe();
+                        recipe.setId(rs.getInt("recipeID"));
+                        recipe.setName(rs.getString("Name"));
+                        recipes.add(recipe);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            log.error("Error fetching recipes by dietary restrictions: " + e.getMessage(), e);
+        }
+
+        return recipes;
+    }
+
+
 }
