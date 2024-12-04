@@ -89,7 +89,8 @@ public class IngredientSearch extends HttpServlet {
 		}
 		// authenticated
 		
-		String keyword_json = request.getParameter("keywords").trim();
+		String keyword_json = request.getParameter("keywords");
+		if (keyword_json != null) keyword_json = keyword_json.trim();
 
 		if (StringUtils.isEmpty(keyword_json)) {
 			Response res = new Response("error", "Required Field not filled.");
@@ -97,11 +98,24 @@ public class IngredientSearch extends HttpServlet {
 			response.getWriter().print(res.toJson());
 			return;
 		}
-		
+				
 		Gson gson = new Gson();
 	    Type listType = new TypeToken<List<String>>(){}.getType();
-	    // In this test code i just shove the JSON here as string.
 	    List<String> keywords = gson.fromJson(keyword_json, listType);
+	    boolean empty = true;
+	    for (int i = 0; i < keywords.size(); i++) {
+	    	if (!keywords.get(i).isEmpty()) {
+	    		empty = false;
+	    		break;
+	    	}
+	    }
+	    
+	    if (empty) {
+			Response res = new Response("error", "Required Field not filled.");
+			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			response.getWriter().print(res.toJson());
+			return;
+		}
 	    
 	    IngredientDao ingredientDao = new IngredientDaoImpl();
 	    List<yumster.obj.Ingredient> ingredients = ingredientDao.getIngredientByKeywords(keywords);
