@@ -1,6 +1,9 @@
 package yumster.endpoints;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
+import java.util.List;
+
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
@@ -14,6 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
+import com.google.gson.reflect.TypeToken;
 
 import yumster.dao.UserDao;
 import yumster.dao.UserTokenDao;
@@ -21,6 +25,8 @@ import yumster.dao.UserDaoImpl;
 import yumster.dao.UserTokenDaoImpl;
 import yumster.dao.RecipeDao;
 import yumster.dao.RecipeDaoImpl;
+import yumster.dao.IngredientDao;
+import yumster.dao.IngredientDaoImpl;
 import yumster.helper.Response;
 import yumster.obj.User;
 import yumster.obj.UserToken;
@@ -42,6 +48,7 @@ public class Recipe extends HttpServlet {
 			throws ServletException, IOException {
 		response.setContentType("application/json");
 		RecipeDao recipeDao = new RecipeDaoImpl();
+		IngredientDao ingredientDao = new IngredientDaoImpl();
 
 		String getIdString = request.getPathInfo(); // remove prepending /
 		if (StringUtils.isEmpty(getIdString)) {
@@ -62,6 +69,7 @@ public class Recipe extends HttpServlet {
 		}
 		
 		yumster.obj.Recipe recipe = recipeDao.getById(getId);
+		List<yumster.obj.Ingredient> ingredients = ingredientDao.getIngredientsByRecipeId(getId);
 		
 		if (recipe == null) {
 			Response res = new Response("error", "Invalid ID");
@@ -73,8 +81,8 @@ public class Recipe extends HttpServlet {
 		Response res = new Response();
 		Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
 		JsonElement jsonElement = gson.toJsonTree(res);
-		System.out.println(jsonElement.toString());
 		jsonElement.getAsJsonObject().add("data", gson.toJsonTree(recipe));
+		jsonElement.getAsJsonObject().add("ingredients", gson.toJsonTree(ingredients));
 		response.getWriter().print(gson.toJson(jsonElement));
 	}
 	
@@ -350,15 +358,4 @@ public class Recipe extends HttpServlet {
 		return;
 		
 	}
-//		  @Override
-//		    public String toString() {
-//		        return "Recipe{" +
-//		            "id=" + id +
-//		            ", name='" + name + '\'' +
-//		            ", instructions='" + instructions + '\'' +
-//		            ", time=" + time +
-//		            ", servings=" + servings +
-//		            ", userId=" + userId +
-//		            '}';
-//		    }
-		}
+}

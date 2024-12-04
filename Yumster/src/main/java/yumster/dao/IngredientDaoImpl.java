@@ -79,4 +79,34 @@ public class IngredientDaoImpl implements IngredientDao {
         }
         return null;
     };
+    
+    public List<Ingredient> getIngredientsByRecipeId(int id) {
+    	try {
+        	DbConnection dbCon = new DbConnection();
+            Connection con = dbCon.getConnection();
+            StringBuilder sql = new StringBuilder("SELECT ingredients.ingredientID, ingredientName, energy, foodCategory, dataType, totalFat, "
+            		+ "transFat, polyUnsatFat, monoUnsatFat, satFat, sodium, totalCarbs, dietaryFiber, "
+            		+ "totalSugar, addedSugar, protein, quantity FROM ingredients, recipe_ingredients "
+            		+ "WHERE recipe_ingredients.recipeId = ? AND ingredients.ingredientId = recipe_ingredients.ingredientId;");
+            try (PreparedStatement ps = con.prepareStatement(sql.toString())) {
+            	ps.setInt(1, id);
+            	ResultSet rs = ps.executeQuery();
+	            List<Ingredient> ingredients = new ArrayList<Ingredient>();
+	            while (rs.next()) {
+	            	System.out.println(rs.getString(2));
+	                Ingredient ingredient = new Ingredient(
+	                		rs.getInt(1), rs.getString(2), rs.getInt(3), rs.getString(4), rs.getString(5),
+	                		rs.getDouble(6), rs.getDouble(7), rs.getDouble(8), rs.getDouble(9), rs.getDouble(10),
+	                		rs.getDouble(11), rs.getDouble(12), rs.getDouble(13), rs.getDouble(14), rs.getDouble(15),
+	                		rs.getDouble(16));
+	                ingredient.setQuantity(rs.getInt(17));
+	                ingredients.add(ingredient);
+	            }
+	            return ingredients;
+            }
+        } catch (SQLException e) {
+            log.error("Error getting ingredients: " + e.getMessage(), e);
+        }
+        return null;
+    }
 }
