@@ -83,7 +83,7 @@ public class DietaryRestrictionDaoImpl implements DietaryRestrictionDao {
         ResultSet rs = null;
         
         try {
-            // Validate input
+           
             if (userId <= 0 || ingredientId <= 0) {
                 log.error("Invalid input - UserId: " + userId + ", IngredientId: " + ingredientId);
                 return false;
@@ -105,11 +105,10 @@ public class DietaryRestrictionDaoImpl implements DietaryRestrictionDao {
                 return false;
             }
 
-            // Close previous PreparedStatement and ResultSet
+            
             rs.close();
             ps.close();
 
-            // Add new restriction
             String insertSql = "INSERT INTO user_restrictions (UserID, IngredientID) VALUES (?, ?)";
             ps = con.prepareStatement(insertSql);
             ps.setInt(1, userId);
@@ -221,13 +220,12 @@ public class DietaryRestrictionDaoImpl implements DietaryRestrictionDao {
             con = dbCon.getConnection();
             con.setAutoCommit(false);
             
-            // Delete existing restrictions
+
             String deleteSql = "DELETE FROM user_restrictions WHERE UserID = ?";
             ps = con.prepareStatement(deleteSql);
             ps.setInt(1, userId);
             ps.executeUpdate();
             
-            // Insert new restrictions
             String insertSql = "INSERT INTO user_restrictions (UserID, IngredientID) VALUES (?, ?)";
             ps = con.prepareStatement(insertSql);
             

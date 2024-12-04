@@ -64,6 +64,7 @@ public class DietaryRestrictionsServlet extends HttpServlet {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         
+        
         try {
             User user = authenticateUser(request);
             if (user == null) {

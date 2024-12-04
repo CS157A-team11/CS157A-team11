@@ -208,7 +208,7 @@ function displaySearchResults(ingredients) {
         div.innerHTML = `
             <span>${ingredient.ingredientName}</span>
             <button class="btn btn-sm btn-primary" 
-                    onclick="addRestriction(${ingredient.id}, '${ingredient.ingredientName}')">
+                    onclick="addRestriction(${ingredient.ingredientId}, '${ingredient.ingredientName}')">
                 Add
             </button>
         `;
@@ -220,6 +220,8 @@ function displaySearchResults(ingredients) {
 async function loadUserRestrictions() {
     try {
         toggleLoading(true);
+        const existingRestriction = document.querySelector(`#selected-restrictions`);
+        existingRestriction.value=null;
         const response = await fetch('/Yumster/api/v1/dietary-restrictions', {
             method: 'GET',
             headers: {
@@ -247,20 +249,22 @@ async function loadUserRestrictions() {
 }
     
 async function addRestriction(ingredientId, ingredientName) {
-    // Check for duplicates before making the API call
     const existingRestriction = document.querySelector(`#selected-restrictions [data-id="${ingredientId}"]`);
     if (existingRestriction) {
         showError("This ingredient is already in your restrictions");
         return;
     }
-    
 
     try {
-    	const formData = new FormData();
         const response = await fetch('/Yumster/api/v1/dietary-restrictions/add', {
-        	method: 'POST',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
             credentials: 'include',
-            body: formData
+            body: JSON.stringify({
+                ingredientId: parseInt(ingredientId)
+            })
         });
 
         if (!response.ok) {
@@ -269,8 +273,9 @@ async function addRestriction(ingredientId, ingredientName) {
 
         const data = await response.json();
         if (data.status === 'success') {
-            addRestrictionTag(ingredientId, ingredientName);
+            //addRestrictionTag(ingredientId, ingredientName);
             showSuccess("Restriction added successfully");
+            await loadUserRestrictions(); // Reload restrictions to ensure consistency
         }
     } catch (error) {
         console.error('Add restriction error:', error);
@@ -285,7 +290,7 @@ async function addRestriction(ingredientId, ingredientName) {
         tag.setAttribute('data-id', ingredientId);
         tag.innerHTML = `
             ${ingredientName}
-            <span class="remove-btn" onclick="removeRestriction(${ingredientId})">×</span>
+            <span class="remove-btn" onclick="removeRestriction(${ingredientId})">×</span>	
         `;
         container.appendChild(tag);
     }
@@ -352,10 +357,7 @@ async function addRestriction(ingredientId, ingredientName) {
             const data = await response.json();
             if (data.status === 'success') {
                 showSuccess("Restrictions saved successfully");
-                // Ensure redirect happens after showing success message
-                setTimeout(() => {
-                    window.location.replace('home.html');
-                }, 1500);
+                setTimeout(() => window.location.href = 'home.html', 1500);
             }
         } catch (error) {
             showError("Failed to save changes");
