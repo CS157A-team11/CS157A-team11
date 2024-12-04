@@ -47,6 +47,17 @@ public class DbConnection {
 				// Connection failed
 				System.err.println(e.getMessage());
 			}
+		} else {
+			try {
+				if (connection.isClosed()) {
+					loadDriver(dbDriver);
+					connection = DriverManager.getConnection(dbUrl, dbUname, dbPassword);
+					connection.setAutoCommit(true);
+				}
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		return connection;
 	}

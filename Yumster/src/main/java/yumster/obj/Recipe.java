@@ -1,11 +1,13 @@
 package yumster.obj;
 
+import com.google.gson.annotations.Expose;
+
 public class Recipe {
     private int id;
-    private String name;
-    private String instructions;
-    private int time;
-    private int servings;
+    @Expose private String name;
+    @Expose private String instructions;
+    @Expose private int time;
+    @Expose private int servings;
     private int userId;
 
     public Recipe() {}

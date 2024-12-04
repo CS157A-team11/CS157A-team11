@@ -1,10 +1,11 @@
 package yumster.helper;
 
 import com.google.gson.Gson;
+import com.google.gson.annotations.Expose;
 
 public class Response {
-	public String status;
-	public String description;
+	@Expose public String status;
+	@Expose public String description;
 	
 	
 	public Response() {

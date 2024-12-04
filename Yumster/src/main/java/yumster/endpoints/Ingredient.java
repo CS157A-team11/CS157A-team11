@@ -28,10 +28,10 @@ import yumster.obj.UserToken;
 /**
  * Servlet implementation class Register
  */
-@WebServlet("/api/v1/recipe/*")
+@WebServlet("/api/v1/ingredient/*")
 @MultipartConfig
 
-public class Recipe extends HttpServlet {
+public class Ingredient extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 
 	/**
@@ -134,7 +134,7 @@ public class Recipe extends HttpServlet {
 			timeInt = Integer.valueOf(time);
 			servingsInt = Integer.valueOf(servings);
 		} catch (NumberFormatException e) {
-			Response res = new Response("error", "Invalid Numbers");
+			Response res = new Response("error", "Invalid ID");
 			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 			response.getWriter().print(res.toJson());
 			return;

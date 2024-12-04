@@ -88,11 +88,13 @@ public class Login extends HttpServlet {
 		if (user == null) {
 			encoder.encode(password); // prevent timing attack by hashing input
 			Response res = new Response("error", "Your input does not match our records.");
+			response.setStatus(422); // UNPROCESSABLE_CONTENT
 			response.getWriter().print(res.toJson());
 			return;
 		}
 		if (!encoder.matches(password, user.getPasswordHash())) {
 			Response res = new Response("error", "Your input does not match our records.");
+			response.setStatus(422); // UNPROCESSABLE_CONTENT
 			response.getWriter().print(res.toJson());
 			return;
 		}

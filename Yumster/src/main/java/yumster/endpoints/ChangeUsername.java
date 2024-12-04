@@ -128,8 +128,8 @@ public class ChangeUsername extends HttpServlet {
         Cookie[] cookies = request.getCookies();
         if (cookies == null) return null;
 
-        UserDaoImpl userDao = new UserDaoImpl();
-        UserTokenDaoImpl tokenDao = new UserTokenDaoImpl();
+        UserDao userDao = new UserDaoImpl();
+        UserTokenDao tokenDao = new UserTokenDaoImpl();
 
         for (Cookie cookie : cookies) {
             if ("token".equals(cookie.getName())) {

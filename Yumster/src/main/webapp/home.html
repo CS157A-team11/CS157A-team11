@@ -157,6 +157,13 @@
     </div>
 
     <!-- Main Content -->
+    <div style="position: absolute; bottom: 2rem; right: 2rem;">
+    	<a href="./new-recipe.html">
+ 			<button class="rounded-circle" style="height: 4rem; width: 4rem">
+	    		<i class="fa-solid fa-plus"></i>
+ 			</button>
+    	</a>
+    </div>
     <div class="main-content">
         <div class="sort-container">
             <select class="form-select w-auto ms-auto" id="sortSelect">
@@ -322,7 +329,7 @@ function populateCookingMethodFilters(methods) {
                 const sortBy = document.getElementById('sortSelect').value;
                 
                 const response = await fetch(`/Yumster/api/v1/recipes?page=${page}&limit=${recipesPerPage}&sort=${sortBy}`,  {
-                    method: 'POST',
+                    method: 'GET',
                     headers: {
                         'Content-Type': 'application/json'
                     },

@@ -13,5 +13,7 @@ public interface RecipeDao {
     boolean updateUserFavorites(int userId, List<Integer> recipeIds);
     Recipe getById(Integer id);  // Add this method
     boolean insert(Recipe recipe);  // Add this if not already present
+    boolean update(Recipe recipe);
     boolean delete(Recipe recipe);  // Add this if not already present
+    Recipe getLatestByUserId(Integer id);
 }
