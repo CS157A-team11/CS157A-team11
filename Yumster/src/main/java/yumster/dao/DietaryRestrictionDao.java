@@ -4,6 +4,7 @@ import java.util.List;
 import yumster.obj.Ingredient;
 
 
+
 public interface DietaryRestrictionDao {
     List<Ingredient> searchIngredients(String keyword);
     List<Integer> getRestrictedRecipes(int userId, List<Integer> ingredientIds);

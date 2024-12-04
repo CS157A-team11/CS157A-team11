@@ -124,6 +124,7 @@ public class DietaryRestrictionDaoImpl implements DietaryRestrictionDao {
             log.error("Failed to add restriction - UserId: " + userId + ", IngredientId: " + ingredientId);
             return false;
             
+            
         } catch (SQLException e) {
             log.error("Error adding user restriction - UserId: " + userId + 
                       ", IngredientId: " + ingredientId + 
