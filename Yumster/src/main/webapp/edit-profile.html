@@ -121,16 +121,16 @@
 
                 <!-- Dietary Restrictions Section -->
                 <div class="mb-4">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5>Dietary Restrictions</h5>
-                        <button type="button" class="btn btn-sm btn-primary" onclick="window.location.href='dietary-restrictions.html'" disabled>
-                            Edit Restrictions
-                        </button>
-                    </div>
-                    <div id="dietary-restrictions-list" class="mb-3">
-                        <p class="text-muted">Coming soon...</p>
-                    </div>
-                </div>
+    <div class="d-flex justify-content-between align-items-center">
+        <h5>Dietary Restrictions</h5>
+        <button type="button" class="btn btn-sm btn-primary" onclick="window.location.href='dietary-restrictions.html'">
+            Edit Restrictions
+        </button>
+    </div>
+    <div id="dietary-restrictions-list" class="mb-3">
+        <!-- Remove the "Coming soon" message -->
+    </div>
+</div>
 
                 <!-- Buttons -->
                 <div class="text-center">
@@ -164,18 +164,22 @@
 
       
         
+
+       
         async function loadUserProfile() {
             try {
                 toggleLoading(true);
-                const [profileResponse, methodsResponse, favoritesResponse] = await Promise.all([
+                const [profileResponse, methodsResponse, favoritesResponse, restrictionsResponse] = await Promise.all([
                     fetch('/Yumster/api/v1/user/profile', { credentials: 'include' }),
                     fetch('/Yumster/api/v1/cooking-methods', { credentials: 'include' }),
-                    fetch('/Yumster/api/v1/favorites', { credentials: 'include' })
+                    fetch('/Yumster/api/v1/favorites', { credentials: 'include' }),
+                    fetch('/Yumster/api/v1/dietary-restrictions', { credentials: 'include' })
                 ]);
 
                 const profileData = await profileResponse.json();
                 const methodsData = await methodsResponse.json();
                 const favoritesData = await favoritesResponse.json();
+                const restrictionsData = await restrictionsResponse.json();
                 
                 if (profileData.status === 'success' && profileData.profile) {
                     populateForm(profileData.profile);
@@ -187,21 +191,43 @@
                     displayUserCookingMethods(methods.filter(method => userMethods.includes(method.id)));
                 }
                 
-                
                 if (favoritesData.status === 'success') {
-                    populateRecipeList(favoritesData.recipes);  // Fixed typo
+                    populateRecipeList(favoritesData.recipes);
                     populateUserFavorites(favoritesData.favorites);
                     displayUserFavorites(favoritesData.favorites);
                 }
+
+                if (restrictionsData.status === 'success') {
+                    displayUserRestrictions(restrictionsData.restrictions);
+                }
             } catch (error) {
-                console.error('Error loading profile:', error);  // Add error logging
+                console.error('Error loading profile:', error);
                 showError("Failed to load profile data");
             } finally {
                 toggleLoading(false);
             }
         }
 
-       
+        function displayUserRestrictions(restrictions) {
+            const container = document.getElementById('dietary-restrictions-list');
+            if (!container) return;
+            container.innerHTML = '';
+            
+            if (!restrictions || restrictions.length === 0) {
+                container.innerHTML = '<p class="text-muted">No dietary restrictions set</p>';
+                return;
+            }
+
+            restrictions.forEach(restriction => {
+                const div = document.createElement('div');
+                div.className = 'favorite-item';
+                div.innerHTML = `
+                    <span class="recipe-name">${restriction.ingredientName}</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+        
         
         
         function populateUserFavorites(favorites) {
@@ -372,11 +398,13 @@
             try {
                 toggleLoading(true);
                 const profileData = {
-                	favoriteRecipes : Array.from(document.querySelectorAll("#favorite-recipes-list span")).map(span => ({id: parseInt(span.dataset.id),name: span.textContent})),
-                    favoriteIngredients: Array.from(document.querySelectorAll("#favorite-ingredients-list span")).map(item => item.textContent),
-                    dietaryRestrictions: Array.from(document.querySelectorAll("#dietary-restrictions-list span")).map(item => item.textContent),
-                    categoricalFilters: Array.from(document.getElementById("categorical-filters").selectedOptions).map(option => option.value),
-                    cookingMethods: Array.from(document.querySelectorAll("#cooking-methods-list input:checked")).map(cb => parseInt(cb.value))
+                    favoriteRecipes: Array.from(document.querySelectorAll("#favorite-recipes-list span"))
+                        .map(span => ({
+                            id: parseInt(span.dataset.id),
+                            name: span.textContent
+                        })),
+                    cookingMethods: Array.from(document.querySelectorAll("#cooking-methods-list input:checked"))
+                        .map(cb => parseInt(cb.value))
                 };
 
                 const response = await fetch('/Yumster/api/v1/profile/update', {
@@ -387,23 +415,43 @@
                     credentials: 'include',
                     body: JSON.stringify(profileData)
                 });
-                
-
 
                 const data = await response.json();
                 if (data.status === 'success') {
                     showSuccess("Profile updated successfully!");
                     setTimeout(() => window.location.href = returnUrl, 1500);
                 } else {
-                    showError(data.message || "Failed to update profile");
+                    throw new Error(data.message || "Failed to update profile");
                 }
             } catch (error) {
-                showError("An error occurred while saving profile");
+                console.error('Save error:', error);
+                showError("Failed to save changes");
             } finally {
                 toggleLoading(false);
             }
         });
 
+        
+        function displayUserRestrictions(restrictions) {
+            const container = document.getElementById('dietary-restrictions-list');
+            if (!container) return;
+            container.innerHTML = '';
+            
+            if (!restrictions || restrictions.length === 0) {
+                container.innerHTML = '<p class="text-muted">No dietary restrictions set</p>';
+                return;
+            }
+
+            restrictions.forEach(restriction => {
+                const div = document.createElement('div');
+                div.className = 'favorite-item'; // Using same styling as favorites
+                div.innerHTML = `
+                    <span class="recipe-name">${restriction.ingredientName}</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+        
         
         function handleCancel() {
             window.location.href = returnUrl;
