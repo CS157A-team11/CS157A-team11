@@ -108,6 +108,22 @@ public class RecipeDaoImpl implements RecipeDao {
         }
     }
     
+    public boolean setImage(Integer recipeId, Integer imageId) {
+        DbConnection dbCon = new DbConnection();
+        Connection con = dbCon.getConnection();
+        String sql = "UPDATE recipes SET imageId = ? WHERE recipeId = ?;";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, recipeId);
+            ps.setInt(2, imageId);
+            
+            int rowsAffected = ps.executeUpdate();
+            return rowsAffected == 1;
+        } catch (SQLException e) {
+            log.error("Error updating recipe: " + e.getMessage(), e);
+            return false;
+        }
+    }
+    
     public Recipe getLatestByUserId(Integer id) {
         Connection con = null;
         PreparedStatement ps = null;
@@ -147,7 +163,7 @@ public class RecipeDaoImpl implements RecipeDao {
         try {
             DbConnection dbCon = new DbConnection();
             con = dbCon.getConnection();
-            String sql = "SELECT RecipeID, Name, Instructions, Time, Servings, UserID FROM recipes WHERE RecipeID = ?;";
+            String sql = "SELECT RecipeID, Name, Instructions, Time, Servings, UserID, Reputation, ImageId FROM recipes WHERE RecipeID = ?;";
             ps = con.prepareStatement(sql);
             ps.setInt(1, id);
             rs = ps.executeQuery();
@@ -160,6 +176,8 @@ public class RecipeDaoImpl implements RecipeDao {
                 recipe.setTime(rs.getInt("Time"));
                 recipe.setServings(rs.getInt("Servings"));
                 recipe.setUserId(rs.getInt("UserID"));
+                recipe.setReputation(rs.getInt("Reputation"));
+                recipe.setImageId(rs.getInt("ImageId"));
                 return recipe;
             }
         } catch (SQLException e) {
@@ -276,8 +294,7 @@ public class RecipeDaoImpl implements RecipeDao {
         
         try {
             DbConnection dbCon = new DbConnection();
-            con = dbCon.getConnection();
-            con.setAutoCommit(false);
+            con = dbCon.getNonAutoCommitConnection();
             
             // Delete existing favorites
             String deleteSql = "DELETE FROM user_recipe WHERE UserID = ? AND Type = 'favorite';";
@@ -311,6 +328,41 @@ public class RecipeDaoImpl implements RecipeDao {
         } finally {
             closeResources(null, ps, con);
         }
+    }
+    
+    public List<Recipe> search(Integer min, Integer limit, String sort, Integer userId) {
+        try {
+            DbConnection dbCon = new DbConnection();
+            Connection con = dbCon.getConnection();
+            String sql = "SELECT RecipeID, Name, Instructions, Time, Servings, UserID, Reputation, ImageId FROM recipes ORDER BY Reputation, RecipeID LIMIT ? OFFSET ?;";
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
+            	ps.setInt(1, limit);
+            	ps.setInt(2, min);
+	            ResultSet rs = ps.executeQuery();
+	            List<Recipe> recipes = new ArrayList<>();
+	
+	            while (rs.next()) {
+	                Recipe recipe = new Recipe();
+	                recipe.setId(rs.getInt("RecipeID"));
+	                recipe.setName(rs.getString("Name"));
+	                recipe.setInstructions(rs.getString("Instructions"));
+	                recipe.setTime(rs.getInt("Time"));
+	                recipe.setServings(rs.getInt("Servings"));
+	                recipe.setUserId(rs.getInt("UserID"));
+	                recipe.setReputation(rs.getInt("Reputation"));
+	                recipe.setImageId(rs.getInt("ImageId"));
+	                recipes.add(recipe);
+	            }
+	            return recipes;
+	        } catch (SQLException e) {
+	        	System.out.println(e);
+	            log.error("Error searching recipe: " + e.getMessage(), e);
+	        }
+        } catch (Exception e) {
+        	System.out.println(e);
+            log.error("Error searching recipe: " + e.getMessage(), e);
+        }
+        return null;
     }
 
     private void closeResources(ResultSet rs, PreparedStatement ps, Connection con) {

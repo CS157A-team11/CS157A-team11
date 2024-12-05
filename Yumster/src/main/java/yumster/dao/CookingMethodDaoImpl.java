@@ -45,8 +45,7 @@ public class CookingMethodDaoImpl implements CookingMethodDao {
         
         try {
             DbConnection dbCon = new DbConnection();
-            con = dbCon.getConnection();
-            con.setAutoCommit(false);
+            con = dbCon.getNonAutoCommitConnection();
             
             // Delete existing methods
             deleteUserMethods(userId);

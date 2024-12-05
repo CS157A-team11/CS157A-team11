@@ -90,8 +90,7 @@ public class FavoriteDaoImpl implements FavoriteDao {
         
         try {
             DbConnection dbCon = new DbConnection();
-            con = dbCon.getConnection();
-            con.setAutoCommit(false);
+            con = dbCon.getNonAutoCommitConnection();
             
             // Delete existing favorites
             String deleteSql = "DELETE FROM user_recipe WHERE UserID = ? AND Type = 'favorite'";

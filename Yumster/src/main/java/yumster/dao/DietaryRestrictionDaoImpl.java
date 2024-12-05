@@ -90,8 +90,7 @@ public class DietaryRestrictionDaoImpl implements DietaryRestrictionDao {
             }
 
             DbConnection dbCon = new DbConnection();
-            con = dbCon.getConnection();
-            con.setAutoCommit(false);  // Start transaction
+            con = dbCon.getNonAutoCommitConnection();
 
             // Check if restriction already exists
             String checkSql = "SELECT 1 FROM user_restrictions WHERE UserID = ? AND IngredientID = ?";
