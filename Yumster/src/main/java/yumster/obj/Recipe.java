@@ -3,11 +3,13 @@ package yumster.obj;
 import com.google.gson.annotations.Expose;
 
 public class Recipe {
-    private int id;
+    @Expose private int id;
     @Expose private String name;
     @Expose private String instructions;
     @Expose private int time;
     @Expose private int servings;
+    @Expose private int reputation;
+    @Expose private int imageId;
     private int userId;
 
     public Recipe() {}
@@ -30,4 +32,6 @@ public class Recipe {
     public void setServings(int servings) { this.servings = servings; }
     public int getUserId() { return userId; }
     public void setUserId(int userId) { this.userId = userId; }
+    public void setReputation(int reputation) { this.reputation = reputation; }
+    public void setImageId(int imageId) { this.imageId = imageId; }
 }

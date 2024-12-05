@@ -113,8 +113,8 @@ public class RecipeDaoImpl implements RecipeDao {
         Connection con = dbCon.getConnection();
         String sql = "UPDATE recipes SET imageId = ? WHERE recipeId = ?;";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, recipeId);
-            ps.setInt(2, imageId);
+            ps.setInt(1, imageId);
+            ps.setInt(2, recipeId);
             
             int rowsAffected = ps.executeUpdate();
             return rowsAffected == 1;
@@ -334,7 +334,7 @@ public class RecipeDaoImpl implements RecipeDao {
         try {
             DbConnection dbCon = new DbConnection();
             Connection con = dbCon.getConnection();
-            String sql = "SELECT RecipeID, Name, Instructions, Time, Servings, UserID, Reputation, ImageId FROM recipes ORDER BY Reputation, RecipeID LIMIT ? OFFSET ?;";
+            String sql = "SELECT RecipeID, Name, Instructions, Time, Servings, UserID, Reputation, ImageId FROM recipes ORDER BY Reputation, RecipeID DESC LIMIT ? OFFSET ?;";
             try (PreparedStatement ps = con.prepareStatement(sql)) {
             	ps.setInt(1, limit);
             	ps.setInt(2, min);

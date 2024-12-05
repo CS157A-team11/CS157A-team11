@@ -1,7 +1,13 @@
 package yumster.endpoints;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.lang.reflect.Type;
+import java.nio.file.Paths;
 import java.util.List;
 
 import javax.servlet.ServletException;
@@ -11,7 +17,9 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.google.gson.Gson;
@@ -25,6 +33,8 @@ import yumster.dao.UserDaoImpl;
 import yumster.dao.UserTokenDaoImpl;
 import yumster.dao.RecipeDao;
 import yumster.dao.RecipeDaoImpl;
+import yumster.dao.ImageDao;
+import yumster.dao.ImageDaoImpl;
 import yumster.dao.IngredientDao;
 import yumster.dao.IngredientDaoImpl;
 import yumster.dao.RecipeCookingMethodDao;
@@ -102,6 +112,7 @@ public class Recipe extends HttpServlet {
 		RecipeDao recipeDao = new RecipeDaoImpl();
 		RecipeCookingMethodDao recipeCookingMethodDao = new RecipeCookingMethodDaoImpl();
 		RecipeIngredientsDao recipeIngredientsDao = new RecipeIngredientsDaoImpl();
+		ImageDao imageDao = new ImageDaoImpl();
 		
 		Cookie[] cookies = request.getCookies();
 		if (cookies == null) {
@@ -130,6 +141,30 @@ public class Recipe extends HttpServlet {
 		}
 		// authenticated
 		
+		Part filePart = request.getPart("file"); // Retrieves <input type="file" name="file">
+		Integer fn = null;
+		boolean img = false;
+		if (filePart != null) {
+			String filePath = getServletContext().getRealPath("/") +"images/";
+		    String fileName = Paths.get(filePart.getSubmittedFileName()).getFileName().toString(); // MSIE fix.
+		    System.out.println(fileName);
+		    System.out.println(filePath);
+		    InputStream fileContent = filePart.getInputStream();
+		    fn = imageDao.getNewId();
+		    File file = new File(filePath + fn.toString() + ".jpg"); // Assumption.\
+		    file.createNewFile(); 
+		    try(OutputStream outputStream = new FileOutputStream(file)){
+		        IOUtils.copy(fileContent, outputStream);
+		    } catch (FileNotFoundException e) {
+		    	System.out.println(e);
+		        // handle exception here
+		    } catch (IOException e) {
+		    	System.out.println(e);
+		        // handle exception here
+		    }
+		    img = true;
+		}
+		    
 		String name = request.getParameter("name").trim();
 		String instructions = request.getParameter("instructions").trim();
 		String time = request.getParameter("time").trim();
@@ -181,6 +216,7 @@ public class Recipe extends HttpServlet {
 		
 		if (recipeDao.insert(recipe)) {			
 			recipe = recipeDao.getLatestByUserId(user.getId());
+			if (img) recipeDao.setImage(new Integer(recipe.getId()), fn);
 			recipeCookingMethodDao.insertRecipeMethods(recipe.getId(), methods);
 			recipeIngredientsDao.insertRecipeIngredients(recipe.getId(), ingredients, quantity);
 			Response res = new Response();

@@ -16,4 +16,6 @@ public interface RecipeDao {
     boolean update(Recipe recipe);
     boolean delete(Recipe recipe);  // Add this if not already present
     Recipe getLatestByUserId(Integer id);
+    List<Recipe> search(Integer min, Integer limit, String sort, Integer userId);
+    boolean setImage(Integer recipeId, Integer imageId);
 }

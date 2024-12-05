@@ -56,12 +56,13 @@
             object-fit: cover;
         }
         .recipe-info {
+        	position: relative;
             padding: 15px;
         }
         .upvotes {
             position: absolute;
             bottom: 10px;
-            left: 10px;
+            right: 10px;
             background: rgba(0,0,0,0.7);
             color: white;
             padding: 5px 10px;
@@ -157,14 +158,14 @@
     </div>
 
     <!-- Main Content -->
-    <div style="position: absolute; bottom: 2rem; right: 2rem;">
+    <div style="position: fixed; bottom: 2rem; right: 2rem; z-index: 99999">
     	<a href="./new-recipe.html">
  			<button class="rounded-circle" style="height: 4rem; width: 4rem">
 	    		<i class="fa-solid fa-plus"></i>
  			</button>
     	</a>
     </div>
-    <div class="main-content">
+    <div class="main-content" style="overflow: scroll">
         <div class="sort-container">
             <select class="form-select w-auto ms-auto" id="sortSelect">
                 <option value="recommended">Recommended</option>
@@ -343,7 +344,8 @@ function populateCookingMethodFilters(methods) {
                 renderRecipes(data.recipes);
                 page++;
             } catch (error) {
-                showError("Failed to load recipes");
+                console.log(error);
+            	showError("Failed to load recipes");
             } finally {
                 toggleLoading(false);
             }
@@ -358,11 +360,11 @@ function populateCookingMethodFilters(methods) {
                 col.className = 'col-md-4 mb-4';
                 col.innerHTML = `
                     <div class="recipe-card">
-                        <img src="${recipe.imageUrl}" alt="${recipe.name}" class="recipe-image">
+                        <img src="./images/${recipe.imageId}.jpg" alt="Image of ${recipe.name}" class="recipe-image">
                         <div class="recipe-info">
                             <h5>${recipe.name}</h5>
                             <div class="upvotes">
-                                <i class="fas fa-arrow-up"></i> ${recipe.upvotes}
+                                <i class="fas fa-arrow-up"></i> ${recipe.reputation}
                             </div>
                         </div>
                     </div>
