@@ -82,8 +82,8 @@ public class RatingServlet extends HttpServlet {
             }
 
             boolean success = ratingDao.addRating(
-                user.getId(), 
-                ratingRequest.getRecipeId(), 
+                user.getId(),
+                ratingRequest.getRecipeId(),
                 ratingRequest.getRating()
             );
 

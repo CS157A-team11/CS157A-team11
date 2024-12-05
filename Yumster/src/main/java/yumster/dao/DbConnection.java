@@ -11,6 +11,7 @@ public class DbConnection {
 	private String dbDriver = "com.mysql.cj.jdbc.Driver";
 	private static DbConnection instance = null;
 	Connection connection = null;
+	Connection nonAutoCommitConnection = null;
 
 	/**
 	 * Get singleton instance of db connection
@@ -60,5 +61,33 @@ public class DbConnection {
 			}
 		}
 		return connection;
+	}
+	
+	public synchronized Connection getNonAutoCommitConnection() {
+		if (nonAutoCommitConnection == null) {
+			try {
+				loadDriver(dbDriver);
+				nonAutoCommitConnection = DriverManager.getConnection(dbUrl, dbUname, dbPassword);
+				nonAutoCommitConnection.setAutoCommit(false);
+//			} catch (ClassNotFoundException e) {
+//				// JDBC library likely not found
+//				System.err.println(e.getMessage());
+			} catch (SQLException e) {
+				// Connection failed
+				System.err.println(e.getMessage());
+			}
+		} else {
+			try {
+				if (nonAutoCommitConnection.isClosed()) {
+					loadDriver(dbDriver);
+					nonAutoCommitConnection = DriverManager.getConnection(dbUrl, dbUname, dbPassword);
+					nonAutoCommitConnection.setAutoCommit(false);
+				}
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		return nonAutoCommitConnection;
 	}
 }

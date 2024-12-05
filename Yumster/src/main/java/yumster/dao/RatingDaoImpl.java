@@ -14,8 +14,7 @@ public class RatingDaoImpl implements RatingDao {
         
         try {
             DbConnection dbCon = new DbConnection();
-            con = dbCon.getConnection();
-            con.setAutoCommit(false);
+            con = dbCon.getNonAutoCommitConnection();
             
             // Add/Update rating
             String sql = "INSERT INTO user_recipe_rating (UserID, RecipeID, Rating) VALUES (?, ?, ?) " +
@@ -25,11 +24,10 @@ public class RatingDaoImpl implements RatingDao {
             ps.setInt(2, recipeId);
             ps.setInt(3, rating);
             ps.setInt(4, rating);
-            
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected > 0) {
                 // Ensure reputation is updated
-                boolean reputationUpdated = updateRecipeReputation(recipeId);
+                boolean reputationUpdated = updateRecipeReputation(recipeId, con);
                 if (reputationUpdated) {
                     con.commit();
                     return true;
@@ -38,6 +36,7 @@ public class RatingDaoImpl implements RatingDao {
             }
             return false;
         } catch (SQLException e) {
+        	System.out.println(e);
             if (con != null) {
                 try {
                     con.rollback();
@@ -99,14 +98,10 @@ public class RatingDaoImpl implements RatingDao {
     }
 
     @Override
-    public boolean updateRecipeReputation(int recipeId) {
-        Connection con = null;
+    public boolean updateRecipeReputation(int recipeId, Connection con) {
         PreparedStatement ps = null;
         
-        try {
-            DbConnection dbCon = new DbConnection();
-            con = dbCon.getConnection();
-            
+        try {            
             // First get the sum of ratings
             String sumSql = "SELECT COALESCE(SUM(Rating), 0) as TotalRating FROM user_recipe_rating WHERE RecipeID = ?";
             ps = con.prepareStatement(sumSql);
@@ -119,19 +114,18 @@ public class RatingDaoImpl implements RatingDao {
             }
             rs.close();
             ps.close();
-
-            String updateSql = "UPDATE recipes SET Reputation = ? WHERE RecipeID = ?";
+            String updateSql = "UPDATE recipes SET Reputation = ? WHERE RecipeID = ?;";
             ps = con.prepareStatement(updateSql);
             ps.setInt(1, totalRating);
             ps.setInt(2, recipeId);
-            
             int rowsAffected = ps.executeUpdate();
             return rowsAffected > 0;
         } catch (SQLException e) {
+        	System.out.println(e);
             log.error("Error updating recipe reputation: " + e.getMessage());
             return false;
         } finally {
-            closeResources(null, ps, con);
+            closeResources(null, ps, null);
         }
     }
 
@@ -142,8 +136,7 @@ public class RatingDaoImpl implements RatingDao {
         
         try {
             DbConnection dbCon = new DbConnection();
-            con = dbCon.getConnection();
-            con.setAutoCommit(false);
+            con = dbCon.getNonAutoCommitConnection();
             String sql = "UPDATE user_recipe_rating SET Rating = ? WHERE UserID = ? AND RecipeID = ?";
             ps = con.prepareStatement(sql);
             ps.setInt(1, rating);
@@ -152,7 +145,7 @@ public class RatingDaoImpl implements RatingDao {
             
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected > 0) {
-                if (updateRecipeReputation(recipeId)) {
+                if (updateRecipeReputation(recipeId, con)) {
                     con.commit();
                     return true;
                 }
