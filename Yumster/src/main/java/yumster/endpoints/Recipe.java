@@ -27,6 +27,10 @@ import yumster.dao.RecipeDao;
 import yumster.dao.RecipeDaoImpl;
 import yumster.dao.IngredientDao;
 import yumster.dao.IngredientDaoImpl;
+import yumster.dao.RecipeCookingMethodDao;
+import yumster.dao.RecipeCookingMethodDaoImpl;
+import yumster.dao.RecipeIngredientsDao;
+import yumster.dao.RecipeIngredientsDaoImpl;
 import yumster.helper.Response;
 import yumster.obj.User;
 import yumster.obj.UserToken;
@@ -96,6 +100,8 @@ public class Recipe extends HttpServlet {
 		UserDao userDao = new UserDaoImpl();
 		UserTokenDao userTokenDao = new UserTokenDaoImpl();
 		RecipeDao recipeDao = new RecipeDaoImpl();
+		RecipeCookingMethodDao recipeCookingMethodDao = new RecipeCookingMethodDaoImpl();
+		RecipeIngredientsDao recipeIngredientsDao = new RecipeIngredientsDaoImpl();
 		
 		Cookie[] cookies = request.getCookies();
 		if (cookies == null) {
@@ -128,15 +134,33 @@ public class Recipe extends HttpServlet {
 		String instructions = request.getParameter("instructions").trim();
 		String time = request.getParameter("time").trim();
 		String servings = request.getParameter("servings").trim();
+		String quantity_json = request.getParameter("quantity").trim();
+		String ingredients_json = request.getParameter("ingredients").trim();
+		String methods_json = request.getParameter("methods").trim();
 
 		if (StringUtils.isEmpty(name) || StringUtils.isEmpty(instructions) ||
-				StringUtils.isEmpty(time) || StringUtils.isEmpty(servings)) {
+				StringUtils.isEmpty(time) || StringUtils.isEmpty(servings) ||
+				StringUtils.isEmpty(quantity_json) || StringUtils.isEmpty(ingredients_json) ||
+				StringUtils.isEmpty(methods_json)) {
 			Response res = new Response("error", "Required Field not filled.");
 			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 			response.getWriter().print(res.toJson());
 			return;
 		}
 		
+		Gson gsonParser = new Gson();
+		Type listType = new TypeToken<List<Integer>>(){}.getType();
+		List<Integer> quantity = gsonParser.fromJson(quantity_json, listType);
+		List<Integer> ingredients = gsonParser.fromJson(ingredients_json, listType);
+		List<Integer> methods = gsonParser.fromJson(methods_json, listType);
+		
+		if (quantity.size() != ingredients.size() || quantity.size() == 0) {
+			Response res = new Response("error", "Required Field not filled or incorrectly filled.");
+			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			response.getWriter().print(res.toJson());
+			return;
+		}
+
 		Integer timeInt, servingsInt;
 		try {
 			timeInt = Integer.valueOf(time);
@@ -157,6 +181,8 @@ public class Recipe extends HttpServlet {
 		
 		if (recipeDao.insert(recipe)) {			
 			recipe = recipeDao.getLatestByUserId(user.getId());
+			recipeCookingMethodDao.insertRecipeMethods(recipe.getId(), methods);
+			recipeIngredientsDao.insertRecipeIngredients(recipe.getId(), ingredients, quantity);
 			Response res = new Response();
 			Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
 			JsonElement jsonElement = gson.toJsonTree(res);

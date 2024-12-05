@@ -75,176 +75,317 @@
         </div>
     </div>
 
-    <div class="container">
-        <div class="card mb-4">
-            <div class="card-body">
-                <h4 class="card-title">Dietary Restrictions</h4>
-                <form id="dietary-form" method="post">
-                    <div class="mb-3">
-                        <label class="form-label">Common Restrictions:</label>
-                        <div id="common-restrictions" class="mb-3">
-                            <!-- Dynamically populated -->
-                        </div>
-                        
-                        <label for="dietaryRestrictions" class="form-label">Add Custom Restrictions:</label>
-                        <div class="input-group">
-                            <input type="text" class="form-control" id="dietaryRestrictions" 
-                                   placeholder="e.g., Lactose Intolerance, Gluten-Free">
-                            <button type="button" class="btn btn-primary" onclick="addCustomRestriction()">Add</button>
-                        </div>
+  <div class="container">
+    <div class="row">
+        <!-- Search and Add Ingredients Column -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Search Ingredients</h4>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="ingredientSearch" 
+                               placeholder="Search ingredients...">
+                        <button class="btn btn-primary" onclick="searchIngredients()">Search</button>
                     </div>
+                    <div id="search-results" class="mt-3">
+                        <!-- Search results will appear here -->
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                    <div id="selected-restrictions" class="mb-3">
-                        <!-- Dynamically populated -->
+        <!-- Selected Restrictions Column -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">My Restrictions</h4>
+                    <div id="selected-restrictions">
+                        <!-- Selected restrictions will appear here -->
                     </div>
-
-                    <div class="text-center">
-                        <button type="submit" class="btn btn-primary">Next</button>
-                        <button type="button" class="btn btn-skip" onclick="skipPage()">Skip This Page</button>
-                    </div>
-                </form>
+                </div>
             </div>
         </div>
     </div>
 
+    <!-- Buttons Container -->
+    <div class="card mt-3">
+        <div class="card-body text-center" id="button-container">
+            <!-- Buttons will be added dynamically -->
+        </div>
+    </div>
+</div>
+
     <script>
-        const commonRestrictions = [
-            'Vegetarian', 'Vegan', 'Gluten-Free', 'Dairy-Free',
-            'Nut-Free', 'Kosher', 'Halal', 'Low-Carb'
-        ];
+ // Utility Functions
+    function showError(message) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'alert alert-danger';
+        errorDiv.textContent = message;
+        document.body.appendChild(errorDiv);
+        setTimeout(() => errorDiv.remove(), 3000);
+    }
 
-        async function checkAuth() {
-            try {
-                const response = await fetch('./api/v1/auth/check', {
-                    credentials: 'include'
-                });
-                const data = await response.json();
-                if (!data.authenticated) {
-                    window.location.href = `LoginPage.html?returnUrl=${encodeURIComponent(window.location.href)}`;
-                } else {
-                    await loadUserRestrictions();
-                    populateCommonRestrictions();
-                }
-            } catch (error) {
-                showError("Authentication failed");
-                setTimeout(() => window.location.href = "LoginPage.html", 2000);
-            }
-        }
+    function showSuccess(message) {
+        const successDiv = document.createElement('div');
+        successDiv.className = 'alert alert-success';
+        successDiv.textContent = message;
+        document.body.appendChild(successDiv);
+        setTimeout(() => successDiv.remove(), 3000);
+    }
 
-        function toggleLoading(show) {
-            document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
-        }
+    function toggleLoading(show) {
+        document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+    }
 
-        function showError(message) {
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'alert alert-danger';
-            errorDiv.textContent = message;
-            document.body.appendChild(errorDiv);
-            setTimeout(() => errorDiv.remove(), 3000);
-        }
-
-        function showSuccess(message) {
-            const successDiv = document.createElement('div');
-            successDiv.className = 'alert alert-success';
-            successDiv.textContent = message;
-            document.body.appendChild(successDiv);
-            setTimeout(() => successDiv.remove(), 3000);
-        }
-
-        function populateCommonRestrictions() {
-            const container = document.getElementById('common-restrictions');
-            commonRestrictions.forEach(restriction => {
-                const tag = document.createElement('span');
-                tag.className = 'restriction-tag';
-                tag.textContent = restriction;
-                tag.onclick = () => toggleRestriction(tag);
-                container.appendChild(tag);
+    // Authentication and Data Loading
+    async function checkAuth() {
+        try {
+            const response = await fetch('/Yumster/api/v1/auth/checkingNow', {
+                credentials: 'include'
             });
-        }
-
-        function toggleRestriction(element) {
-            element.classList.toggle('selected');
-        }
-
-        function addCustomRestriction() {
-            const input = document.getElementById('dietaryRestrictions');
-            const value = input.value.trim();
-            
-            if (value) {
-                const container = document.getElementById('selected-restrictions');
-                const tag = document.createElement('span');
-                tag.className = 'restriction-tag selected';
-                tag.textContent = value;
-                tag.onclick = () => toggleRestriction(tag);
-                container.appendChild(tag);
-                input.value = '';
+            const data = await response.json();
+            if (!data.authenticated) {
+                window.location.href = `LoginPage.html?returnUrl=${encodeURIComponent(window.location.href)}`;
+            } else {
+                setupButtons();
             }
+        } catch (error) {
+            showError("Authentication failed");
+        }
+    }
+    
+    // Search and Display Functions
+async function searchIngredients() {
+    const searchInput = document.getElementById('ingredientSearch');
+    const searchTerm = searchInput.value.trim();
+    
+    if (!searchTerm) {
+        showError("Please enter an ingredient to search");
+        return;
+    }
+
+    try {
+        toggleLoading(true);
+        // Use the correct endpoint with keywords parameter
+        const formData = new FormData();
+        formData.append("keywords", JSON.stringify(searchTerm.split(" ")));
+        const response = await fetch('/Yumster/api/v1/ingredient-search', {
+            method: 'POST',
+            credentials: 'include',
+            body: formData
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        async function loadUserRestrictions() {
-            try {
-                toggleLoading(true);
-                const response = await fetch('./api/v1/restrictions', {
-                    credentials: 'include'
-                });
-                const data = await response.json();
-                
-                if (data.status === 'success') {
-                    data.restrictions.forEach(restriction => {
-                        const container = document.getElementById('selected-restrictions');
-                        const tag = document.createElement('span');
-                        tag.className = 'restriction-tag selected';
-                        tag.textContent = restriction;
-                        tag.onclick = () => toggleRestriction(tag);
-                        container.appendChild(tag);
-                    });
-                }
-            } catch (error) {
-                showError("Failed to load existing restrictions");
-            } finally {
-                toggleLoading(false);
-            }
+        const data = await response.json();
+        if (data.status === 'success') {
+            displaySearchResults(data.ingredients);
         }
+    } catch (error) {
+        console.error('Search error:', error);
+        showError("Failed to search ingredients");
+    } finally {
+        toggleLoading(false);
+    }
+}
 
-        document.getElementById('dietary-form').addEventListener('submit', async function(event) {
-            event.preventDefault();
-            try {
-                toggleLoading(true);
 
-                const selectedRestrictions = [
-                    ...document.querySelectorAll('.restriction-tag.selected')
-                ].map(tag => tag.textContent);
+function displaySearchResults(ingredients) {
+    const container = document.getElementById('search-results');
+    container.innerHTML = '';
+    
+    if (!ingredients || ingredients.length === 0) {
+        container.innerHTML = '<p class="text-muted">No ingredients found</p>';
+        return;
+    }
 
-                const response = await fetch('./api/v1/restrictions/update', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify({ restrictions: selectedRestrictions })
-                });
-
-                const data = await response.json();
-                
-                if (data.status === 'success') {
-                    showSuccess("Restrictions saved successfully!");
-                    setTimeout(() => window.location.href = "favorites.html", 1500);
-                } else {
-                    showError(data.message || "Failed to save restrictions");
-                }
-            } catch (error) {
-                showError("An error occurred while saving restrictions");
-            } finally {
-                toggleLoading(false);
-            }
+    ingredients.forEach(ingredient => {
+        const div = document.createElement('div');
+        div.className = 'ingredient-item d-flex justify-content-between align-items-center p-2 border-bottom';
+        div.innerHTML = `
+            <span>${ingredient.ingredientName}</span>
+            <button class="btn btn-sm btn-primary" 
+                    onclick="addRestriction(${ingredient.ingredientId}, '${ingredient.ingredientName}')">
+                Add
+            </button>
+        `;
+        container.appendChild(div);
+    });
+}
+    
+    
+async function loadUserRestrictions() {
+    try {
+        toggleLoading(true);
+        const existingRestriction = document.querySelector(`#selected-restrictions`);
+        existingRestriction.value=null;
+        const response = await fetch('/Yumster/api/v1/dietary-restrictions', {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json'
+            },
+            credentials: 'include'
         });
 
-        function skipPage() {
-            window.location.href = "favorites.html";
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        // Initialize page
-        checkAuth();
+        const data = await response.json();
+        if (data.status === 'success' && data.restrictions) {
+            data.restrictions.forEach(restriction => {
+                addRestrictionTag(restriction.ingredientId, restriction.ingredientName);
+            });
+        }
+    } catch (error) {
+        console.error('Load restrictions error:', error);
+        showError("Failed to load restrictions");
+    } finally {
+        toggleLoading(false);
+    }
+}
+    
+async function addRestriction(ingredientId, ingredientName) {
+    const existingRestriction = document.querySelector(`#selected-restrictions [data-id="${ingredientId}"]`);
+    if (existingRestriction) {
+        showError("This ingredient is already in your restrictions");
+        return;
+    }
+
+    try {
+        const response = await fetch('/Yumster/api/v1/dietary-restrictions/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                ingredientId: parseInt(ingredientId)
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (data.status === 'success') {
+            //addRestrictionTag(ingredientId, ingredientName);
+            showSuccess("Restriction added successfully");
+            await loadUserRestrictions(); // Reload restrictions to ensure consistency
+        }
+    } catch (error) {
+        console.error('Add restriction error:', error);
+        showError("Failed to add restriction");
+    }
+}
+
+    function addRestrictionTag(ingredientId, ingredientName) {
+        const container = document.getElementById('selected-restrictions');
+        const tag = document.createElement('div');
+        tag.className = 'restriction-tag';
+        tag.setAttribute('data-id', ingredientId);
+        tag.innerHTML = `
+            ${ingredientName}
+            <span class="remove-btn" onclick="removeRestriction(${ingredientId})">×</span>	
+        `;
+        container.appendChild(tag);
+    }
+
+    async function removeRestriction(ingredientId) {
+        try {
+            const response = await fetch('/Yumster/api/v1/dietary-restrictions/remove', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({ ingredientId })
+            });
+
+            const data = await response.json();
+            if (data.status === 'success') {
+                const tag = document.querySelector(`#selected-restrictions [data-id="${ingredientId}"]`);
+                if (tag) {
+                    tag.remove();
+                    showSuccess("Restriction removed successfully");
+                }
+            }
+        } catch (error) {
+            showError("Failed to remove restriction");
+        }
+    }
+
+    // Navigation and Setup
+    function setupButtons() {
+        const container = document.getElementById('button-container');
+        const params = new URLSearchParams(window.location.search);
+        const isOnboarding = params.get('onboarding') === 'true';
+        
+        if (isOnboarding) {
+            container.innerHTML = `
+                <button class="btn btn-primary me-2" onclick="saveAndContinue()">Next</button>
+                <button class="btn btn-secondary me-2" onclick="goBack()">Previous</button>
+                <button class="btn btn-link" onclick="skipPage()">Skip this step</button>
+            `;
+        } else {
+            container.innerHTML = `
+                <button class="btn btn-primary me-2" onclick="saveChanges()">Save Changes</button>
+                <button class="btn btn-secondary" onclick="goBack()">Back</button>
+            `;
+        }
+    }
+
+    async function saveChanges() {
+        try {
+            toggleLoading(true);
+            const restrictionIds = Array.from(document.querySelectorAll('#selected-restrictions [data-id]'))
+                .map(item => parseInt(item.getAttribute('data-id')));
+
+            const response = await fetch('/Yumster/api/v1/dietary-restrictions/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({ ingredientIds: restrictionIds })
+            });
+
+            const data = await response.json();
+            if (data.status === 'success') {
+                showSuccess("Restrictions saved successfully");
+                setTimeout(() => window.location.href = 'home.html', 1500);
+            }
+        } catch (error) {
+            showError("Failed to save changes");
+        } finally {
+            toggleLoading(false);
+        }
+    }
+
+    function saveAndContinue() {
+        saveChanges().then(() => {
+            window.location.href = 'favorites.html';
+        });
+    }
+
+    function skipPage() {
+        window.location.href = 'favorites.html';
+    }
+
+    function goBack() {
+        window.location.href = document.referrer || 'home.html';
+    }
+    
+    
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', async () => {
+        await checkAuth();
+        await loadUserRestrictions();
+    });
     </script>
 </body>
 </html>

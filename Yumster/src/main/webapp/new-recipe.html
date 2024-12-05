@@ -95,33 +95,18 @@
                     <label for="recipe-servings" class="form-label">Servings</label>
                     <input type="number" class="form-control" id="recipe-servings" name="servings" required>
                 </div>
-                <div class="card mb-4">
-                    <h4 class="card-title">Available Cooking Methods</h4>
-	                <div class="card-body">
-	                    <div class="mb-3 checkbox-grid" id="methods-container">
-	                        <!-- Methods will be populated here -->
-	                    </div>
-	                </div>
+                <div class="mb-4">
+                    <label class="mb-3">Used Cooking Methods</label>
+                    <div class="mb-3" style="display:flex; flex-wrap: wrap; justify-content: space-evenly;" id="methods-container">
+                        <!-- Methods will be populated here -->
+                    </div>
 	            </div>
-                <label for="new-username" class="form-label">Ingredients</label>
+                <label for="ingredients-div" class="form-label">Ingredients</label>
                 <div id="ingredients-div">
-	                <div class="mb-3 input-group" style="align-items: center;">
-	                	<input type="number" class="form-control" id="new-username" name="ingredient-grams" required>
-	              	    <span class="input-group-addon" style="padding-left: 0.5rem; padding-right: 1rem">grams</span>
-	                    <input type="text" class="form-control" id="new-username" name="ingredient-kwds" required onKeyUp="typewatch(function(){console.log('hello');}, 500);">	                    
-	                    <select multiple class="form-control" id="ingredient-match" name="ingredient-match" required>
-	                          <option>1</option>
-	                    </select>
-	                </div>
-	                <div class="mb-3 input-group" style="align-items: center;">
-	                	<input type="number" class="form-control" id="new-username" name="ingredient-grams" required>
-	              	    <span class="input-group-addon align-middle">grams</span>
-	                    <input type="text" class="form-control" id="new-username" name="ingredient-kwds" required>
-	                    <select multiple class="form-control" id="ingredient-match" name="ingredient-match" required>
-	                          <option>1</option>
-	                    </select>
-	                </div>
+                	<!-- FILL INGREDIENTS -->
 	            </div>
+	            <button type="button" onclick="addElementToForm();">Add Ingredient</button>
+        		<button type="button" id="remove-ingredient" style="visibility: hidden" onclick="removeIngredient();">Remove Ingredient</button>
                 <div class="text-center">
                     <button type="submit" id="change-btn" class="btn btn-primary">Submit</button>
                     <button type="button" class="btn btn-secondary" onclick="handleCancel()">Cancel</button>
@@ -169,6 +154,22 @@
             try {
                 toggleLoading(true);
                 const formData = new FormData(this);
+                let quantity = [];
+                let ingredients = [];
+                let methods = [];
+                for (let i = 1; i < counter; i++) {
+                	quantity.push(Number(document.getElementById("ingredient-grams-" + i).value));
+                	ingredients.push(Number(document.getElementById("ingredient-match-" + i).value));
+                }
+                for (let i = 0; i < cookingMethods.length; i++) {
+                	let elem = document.getElementById(cookingMethods[i]);
+                	if (elem.checked) {
+                		methods.push(Number(elem.value));
+                	}
+                }
+                formData.append("quantity", JSON.stringify(quantity));
+                formData.append("ingredients", JSON.stringify(ingredients));
+                formData.append("methods", JSON.stringify(methods));
                 const response = await fetch('./api/v1/recipe', {
                     method: 'POST',
                     credentials: 'include',
@@ -177,8 +178,7 @@
 
                 const data = await response.json();
                 if (data.status === 'success') {
-                    sessionStorage.setItem('username', data.newUsername);
-                    showSuccess("Username updated successfully!");
+                    showSuccess("Added Recipe ID: " + data.recipeId	);
                     // Redirect is now handled in showSuccess function
                 } else {
                     showError(data.message || "Failed to update username");
@@ -190,32 +190,116 @@
             }
         });
 
-        const cookingMethods = [
-            'Boiling',    // ID: 1
-            'Grilling',   // ID: 2
-            'Frying',     // ID: 3
-            'Baking',     // ID: 4
-            'Roasting',   // ID: 5
-            'Steaming',   // ID: 6
-            'Sauteing',   // ID: 7
-            'Broiling',   // ID: 8
-            'Poaching',   // ID: 9
-            'Simmering'   // ID: 10
-        ];
+        const cookingMethods = [];
         
         function populateMethods() {
-            const container = document.getElementById('methods-container');
-            cookingMethods.forEach(method => {
-                const div = document.createElement('div');
-                div.className = 'form-check';
-                div.innerHTML = `
-                    <input class="form-check-input" type="checkbox" value="${method}" id="${method.toLowerCase()}">
-                    <label class="form-check-label" for="${method.toLowerCase()}">${method}</label>
-                `;
-                container.appendChild(div);
-            });
+        	var xhr = new XMLHttpRequest();
+    	   	xhr.open("GET", "./api/v1/cooking-methods");
+    	   	xhr.onload = function(event) {
+    	   		let resp = JSON.parse(event.target.response);
+    	   		if (resp.status === "success") {	   			
+    	            const container = document.getElementById('methods-container');
+    	            resp.methods.forEach((method) => {
+    	                const div = document.createElement('div');
+    	                div.className = 'form-check';
+    	                div.innerHTML = `
+    	                    <input class="form-check-input" type="checkbox" value="${method.id}" name="${method.name}" id="cookingmethod-${method.name.toLowerCase()}">
+    	                    <label class="form-check-label" for="cookingmethod-${method.name.toLowerCase()}">${method.name}</label>
+    	                `;
+    	                container.appendChild(div);
+    	                cookingMethods.push("cookingmethod-"+method.name.toLowerCase());
+    	            });
+    	   		}
+    	   	};
+    	   	// or onerror, onabort
+    	   	xhr.send();
         }
-
+		
+    let counter = 1;
+	function addElementToForm(name = "", value = "") {
+		//<div class="mb-3 input-group" style="align-items: center;">
+	    //	<input type="number" class="form-control" id="grams-1" name="ingredient-grams" required>
+	  	//    <span class="input-group-addon" style="padding-left: 0.5rem; padding-right: 1rem">grams</span>
+	    //    <input type="text" class="form-control" id="ingredient-kwds-1" name="ingredient-kwds" required onKeyUp="typewatch(function(){console.log('hello');}, 500);">	                    
+	    //    <select class="form-control" id="ingredient-match-1" name="ingredient-match" required>
+	    //          <option>1</option>
+	    //    </select>
+	    //</div>
+   		var form_div = document.getElementById("ingredients-div");
+   		var div = document.createElement("div");
+   		var input1 = document.createElement("input");
+   		var sep = document.createElement("span");
+   		var input2 = document.createElement("input");
+   		var select = document.createElement("select");
+   		div.className = "mb-3 input-group";
+   		div.style = "align-items: center;";
+   		div.id = 'ingredient-div-' + counter;
+   		input1.type = "number";
+   		input1.id = "ingredient-grams-" + counter;
+   		input1.className = "form-control";
+   		input1.name = 'ingredient-grams-' + counter;
+   		sep.innerHTML = "grams";
+   		sep.className = "input-group-addon";
+   		sep.style = "padding-left: 0.5rem; padding-right: 1rem";
+   		input2.type = "text";
+   		input2.className = "form-control";
+   		input2.id = "ingredient-kwds-" + counter;
+   		input2.name = "ingredient-kwds-" + counter;
+   		select.id = "ingredient-match-" + counter;
+   		input2.onkeyup = () => {
+   			typewatch(function(){
+   				populateSelect(input2.id, select.id);
+   			}, 350);
+   		}
+   		select.className = "form-control";
+   		select.name = "ingredient-match-" + counter;
+		
+		div.appendChild(input1);
+		div.appendChild(sep);
+   		div.appendChild(input2);
+   		div.appendChild(select);
+   		form_div.appendChild(div);
+   		counter++;
+   		if (counter > 2) {
+	   		document.getElementById("remove-ingredient").style.visibility = "visible";		
+   		}
+   	};
+   	
+   	function removeIngredient() {
+   		if (counter <= 2){
+   			return
+   		};
+   		document.getElementById("ingredient-div-" + (counter-1)).remove();
+   		counter--;
+   		if (counter <= 2){
+   	   		document.getElementById("remove-ingredient").style.visibility = "hidden";
+   		};
+   	}
+   	
+   	function populateSelect(inpId, selId) {
+   		let selectTag = document.getElementById(selId);
+   		let inputTag = document.getElementById(inpId);
+   		var xhr = new XMLHttpRequest();
+	   	xhr.open("POST", "./api/v1/ingredient-search");
+	   	xhr.onload = function(event) {
+	   		let resp = JSON.parse(event.target.response);
+	   		while (selectTag.firstChild) {
+	   			selectTag.removeChild(selectTag.lastChild);
+   			}
+	   		if (resp.status === "success") {	   			
+		   		resp.ingredients.map((item) => {
+		   		    let opt = document.createElement("option");
+		   		    opt.value = item.ingredientId; // the index
+		   		    opt.innerHTML = item.ingredientName + "; " + item.dataType;
+		   		    selectTag.append(opt);
+		   		});
+	   		}
+	   	};
+	   	// or onerror, onabort
+	   	var form_data = new FormData();
+	   	form_data.append("keywords", JSON.stringify(inputTag.value.split(" ")));
+	   	xhr.send(form_data);
+   	}
 
     function handleCancel() {
         window.location.href = returnUrl;
@@ -242,8 +326,11 @@
     }();
 
     // Initialize page
-    checkAuth();
-    populateMethods();
+    window.addEventListener('load', () => {
+	    checkAuth();
+	    populateMethods();
+	    addElementToForm();    	
+    });
 </script>
 
 </body>
