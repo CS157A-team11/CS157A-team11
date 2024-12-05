@@ -109,6 +109,17 @@
 .profile-dropdown a:hover {
     background: #f8f9fa;
 }
+.main-content {
+    margin-left: 250px;
+    padding: 20px;
+    height: calc(100vh - 60px);
+    overflow-y: auto;
+}
+
+#sentinel {
+    height: 10px;
+    margin-bottom: 20px;
+}
     </style>
 </head>
 <body>
@@ -323,72 +334,91 @@ function populateCookingMethodFilters(methods) {
 }
 		var timer = null;
         // Load recipes
-        async function loadRecipes() {
-            if (loading || !hasMoreRecipes) return;
-            
-            try {
-                toggleLoading(true);
-                const filters = getActiveFilters();
-                const sortBy = document.getElementById('sortSelect').value;
-                
-                const response = await fetch(`./api/v1/recipe-search?page=${page}&limit=${recipesPerPage}&sort=${sortBy}`,  {
-                    method: 'GET',
-                    credentials: 'include',
-                });
-    			// body: JSON.stringify(filters)
-                const data = await response.json();
-                
-                if (data.recipes.length < recipesPerPage) {
-                    hasMoreRecipes = false;
-                }
+async function loadRecipes() {
+    if (loading || !hasMoreRecipes) return;
     
-                renderRecipes(data.recipes);
-                page++;
-            } catch (error) {
-                console.log(error);
-            	showError("Failed to load recipes");
-            } finally {
-                toggleLoading(false);
-                timer = null;
-            }
-        }
-    
-        // Render recipes
-        function renderRecipes(recipes) {
-            const grid = document.getElementById('recipeGrid');
-            
-            recipes.forEach(recipe => {
-                const col = document.createElement('div');
-                col.className = 'col-md-4 mb-4';
-                col.innerHTML = `
-                	<a href="./view-recipe.html?id=${recipe.id}"
-	                    <div class="recipe-card">
-	                        <img src="./images/${recipe.imageId}.jpg" alt="Image of ${recipe.name}" class="recipe-image">
-	                        <div class="recipe-info">
-	                            <h5>${recipe.name}</h5>
-	                            <div class="upvotes">
-	                                <i class="fas fa-arrow-up"></i> ${recipe.reputation}
-	                            </div>
-	                        </div>
-	                    </div>
-	               	</a>
-                `;
-                grid.appendChild(col);
-            });
+    try {
+        toggleLoading(true);
+        const filters = getActiveFilters();
+        const sortBy = document.getElementById('sortSelect').value;
+        
+        const response = await fetch(`./api/v1/recipe-search?page=${page}&limit=${recipesPerPage}&sort=${sortBy}`, {
+            method: 'GET',
+            credentials: 'include',
+        });
+        
+        const data = await response.json();
+        
+        // If no more new recipes, reset page to 1 to start over
+        if (data.recipes.length < recipesPerPage) {
+            page = 1;
+        } else {
+            page++;
         }
         
-        window.onscroll = function(ev) {
-            if ((window.innerHeight + Math.round(window.scrollY) + 5) >= document.body.offsetHeight) {
-            	// add 5 for fuzzing.
-           		console.log("CALLED");
-        		if (timer != null) {
-            		// called, just wait.
-           		}
-           		else {
-           		  timer = window.setTimeout(loadRecipes, 100);
-           		}
-            }
+        renderRecipes(data.recipes);
+    } catch (error) {
+        console.error('Error loading recipes:', error);
+        showError("Failed to load recipes");
+    } finally {
+        toggleLoading(false);
+        timer = null;
+    }
+}
+    
+        // Render recipes
+function renderRecipes(recipes) {
+    const grid = document.getElementById('recipeGrid');
+    const sentinel = document.getElementById('sentinel');
+    
+    recipes.forEach(recipe => {
+        const col = document.createElement('div');
+        col.className = 'col-md-4 mb-4';
+        col.innerHTML = `
+            <a href="./view-recipe.html?id=${recipe.id}">
+                <div class="recipe-card">
+                    <img src="./images/${recipe.imageId}.jpg" alt="Image of ${recipe.name}" class="recipe-image">
+                    <div class="recipe-info">
+                        <h5>${recipe.name}</h5>
+                        <div class="upvotes">
+                            <i class="fas fa-arrow-up"></i> ${recipe.reputation}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        `;
+        grid.insertBefore(col, sentinel);
+    });
+}
+        
+     // Create an intersection observer
+        const observerOptions = {
+            root: null,
+            rootMargin: '100px',
+            threshold: 0.1
         };
+
+        const loadMoreCallback = (entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && !loading) {
+                    loadRecipes();
+                }
+            });
+        };
+
+        const observer = new IntersectionObserver(loadMoreCallback, observerOptions);
+
+        // Add a sentinel element at the bottom of the recipe grid
+        const sentinel = document.createElement('div');
+        sentinel.id = 'sentinel';
+        sentinel.style.height = '10px';
+        document.getElementById('recipeGrid').appendChild(sentinel);
+
+        // Start observing the sentinel
+        observer.observe(sentinel);
+
+        // Remove the old scroll event listener
+        // window.onscroll = function(ev) { ... };
 
     
         // Filter handling
