@@ -93,7 +93,6 @@ public class IngredientDaoImpl implements IngredientDao {
             	ResultSet rs = ps.executeQuery();
 	            List<Ingredient> ingredients = new ArrayList<Ingredient>();
 	            while (rs.next()) {
-	            	System.out.println(rs.getString(2));
 	                Ingredient ingredient = new Ingredient(
 	                		rs.getInt(1), rs.getString(2), rs.getInt(3), rs.getString(4), rs.getString(5),
 	                		rs.getDouble(6), rs.getDouble(7), rs.getDouble(8), rs.getDouble(9), rs.getDouble(10),
