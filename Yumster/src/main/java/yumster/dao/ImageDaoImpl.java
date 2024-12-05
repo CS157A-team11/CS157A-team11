@@ -33,7 +33,7 @@ public class ImageDaoImpl implements ImageDao {
     public Integer getLatest() {
         DbConnection dbCon = new DbConnection();
         Connection con = dbCon.getNonAutoCommitConnection();
-        String sql = "SELECT imageID FROM images;";
+        String sql = "SELECT imageID FROM images ORDER BY imageID DESC;";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             ResultSet rs = ps.executeQuery();
             
