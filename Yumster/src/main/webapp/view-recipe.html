@@ -75,6 +75,10 @@
     font-size: 1.2rem;
     margin-left: 5px;
 }
+#recipe-image {
+    max-width: 100%;
+	max-height: 100%;
+}
 
 
     </style>
@@ -89,51 +93,56 @@
 
 <div class="container">
     <div class="card">
-        <div class="card-body">
-            <h4 class="card-title text-center" id="recipe-name">New Recipe</h4>
-              	<b><label for="ingredients-div" class="form-label">Ingredients</label></b>
-               	<div id="ingredients-div" style="display:flex;flex-direction:column">
-               	<!-- FILL INGREDIENTS -->
-            	</div>
-               <div class="mb-3 flex">
-                   <b><label for="recipe-instructions" class="form-label">Instructions</label></b>
-				<p id="recipe-instructions" style="white-space: pre-line;"></p>
-               </div>
-               <div class="mb-3 flex">
-                   <b><label for="recipe-time" class="form-label">Time</label></b>
-				<p id="recipe-time"></p>
-               </div>
-               <div class="mb-3 flex">
-                   <b><label for="recipe-servings" class="form-label">Servings</label></b>
-                   <p id="recipe-servings"></p>
-               </div>
-               <div class="mb-3 flex">
-    <div class="d-flex justify-content-between align-items-center">
-        <!-- Left side: User's rating -->
-        <div class="user-rating">
-            <b><label>Your Rating:</label></b>
-            <span id="user-rating">Not rated yet</span>
-            <button id="edit-rating-btn" class="btn btn-sm btn-secondary ms-2" onclick="editRating()" style="display: none;">
-                Edit Rating
-            </button>
-        </div>
-        
-        <!-- Right side: Total reputation -->
-        <div class="recipe-reputation">
-        <b><label>Reputation:</label></b>
-            <span id="reputation-count">0</span>
-            <span class="reputation-icon">👍</span>
-        </div>
-    </div>
-</div>
-
-<!-- Rate Recipe Button -->
-<div class="text-center mt-3">
-    <button id="rate-recipe-btn" class="btn btn-primary" onclick="rateRecipe()">
-        Rate This Recipe
-    </button>
-</div>
-               
+        <div class="card-body" style="padding: 2rem">
+           	<h4 class="card-title text-center" id="recipe-name">New Recipe</h4>
+           	<div style="height:min-content; display:flex; justify-content: space-between;">
+           		<div style="max-width: 50%;">
+					<b><label for="ingredients-div" class="form-label">Ingredients</label></b>
+					<div id="ingredients-div" style="display:flex;flex-direction:column">
+						<!-- FILL INGREDIENTS -->
+					</div>
+					<div class="mb-3 flex">
+						<b><label for="recipe-instructions" class="form-label">Instructions</label></b>
+						<p id="recipe-instructions" style="white-space: pre-line;"></p>
+					</div>
+					<div class="mb-3 flex">
+						<b><label for="recipe-time" class="form-label">Time</label></b>
+						<p id="recipe-time"></p>
+					</div>
+					<div class="mb-3 flex">
+						<b><label for="recipe-servings" class="form-label">Servings</label></b>
+						<p id="recipe-servings"></p>
+					</div>
+           		</div>
+           		<div style="width: 25%">
+				    <img id="recipe-image" src="" alt=""/>
+           		</div>
+           	</div>
+			<div class="mb-3 flex">
+			    <div class="d-flex justify-content-between align-items-center">
+			        <!-- Left side: User's rating -->
+			        <div class="user-rating">
+			            <b><label>Your Rating:</label></b>
+			            <span id="user-rating">Not rated yet</span>
+			            <button id="edit-rating-btn" class="btn btn-sm btn-secondary ms-2" onclick="editRating()" style="display: none;">
+			                Edit Rating
+			            </button>
+        			</div>
+			        <!-- Right side: Total reputation -->
+			        <div class="recipe-reputation">
+			        <b><label>Reputation:</label></b>
+			            <span id="reputation-count">0</span>
+			            <span class="reputation-icon">👍</span>
+			        </div>
+			    </div>
+			</div>
+			
+			<!-- Rate Recipe Button -->
+			<div class="text-center mt-3">
+			    <button id="rate-recipe-btn" class="btn btn-primary" onclick="rateRecipe()">
+			        Rate This Recipe
+			    </button>
+			</div>    
         </div>
     </div>
 </div>
@@ -180,6 +189,7 @@
         async function populate() {
             try {
                 let recName = document.getElementById("recipe-name");
+                let recImage = document.getElementById("recipe-image");
                 let recInstructions = document.getElementById("recipe-instructions");
                 let recTime = document.getElementById("recipe-time");
                 let recServings = document.getElementById("recipe-servings");
@@ -192,13 +202,15 @@
                 const resp = await response.json();
 
                 if (resp.status === "success" && resp.data) {
+                	recImage.src = "./images/" + resp.data.imageId + ".jpg";
+                	recImage.alt = resp.data.name ? "Image of " + resp.data.name : 'Image of Recipe';
                     recName.innerHTML = resp.data.name || 'No name available';
                     recInstructions.innerHTML = resp.data.instructions || 'No instructions available';
                     recTime.innerHTML = (resp.data.time || '0') + " minutes";
                     recServings.innerHTML = (resp.data.servings || '0') + " servings";
 
-                    if (resp.data.ingredients && Array.isArray(resp.data.ingredients)) {
-                        resp.data.ingredients.forEach((item) => {
+                    if (resp.ingredients && Array.isArray(resp.ingredients)) {
+                        resp.ingredients.forEach((item) => {
                             var div = document.createElement("div");
                             var ingGrams = document.createElement("p");
                             var ingName = document.createElement("p");
