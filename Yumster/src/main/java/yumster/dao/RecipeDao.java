@@ -18,4 +18,5 @@ public interface RecipeDao {
     Recipe getLatestByUserId(Integer id);
     List<Recipe> search(Integer min, Integer limit, String sort, Integer userId);
     boolean setImage(Integer recipeId, Integer imageId);
+    public List<Recipe> filter(int UserId, List<String> keywords, boolean latest, boolean useUserIngredients);
 }

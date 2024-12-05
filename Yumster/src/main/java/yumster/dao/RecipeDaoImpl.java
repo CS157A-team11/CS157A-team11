@@ -374,4 +374,103 @@ public class RecipeDaoImpl implements RecipeDao {
             log.error("Error closing resources: " + e.getMessage(), e);
         }
     }
+    
+    private List<String> sanitizeKeywords(List<String> keywords) {
+        List<String> sanitizedKeywords = new ArrayList<>();
+        for (String keyword : keywords) {
+            sanitizedKeywords.add(
+                keyword.replace("!", "!!")
+                       .replace("%", "!%")
+                       .replace("_", "!_")
+                       .replace("[", "![")
+            );
+        }
+        return sanitizedKeywords;
+    }
+    
+    public List<Recipe> filter(int UserId, List<String> keywords, boolean latest, boolean useUserIngredients) {
+        List<Recipe> recipes = new ArrayList<>();
+        List<String> sanitizedKeywords = sanitizeKeywords(keywords);
+        String sql = "SELECT RecipeID, Name, Instructions, Time, Servings, UserID, ImageID "
+                   + "FROM recipes "
+                   + "WHERE RecipeID IN ("
+                   + "    SELECT DISTINCT RecipeID"
+                   + "    FROM recipes"
+                   + "    WHERE RecipeID NOT IN (" // filter out recipes with ingredients that user cannot eat
+                   + "        SELECT DISTINCT RecipeID"
+                   + "        FROM recipe_ingredients"
+                   + "        WHERE IngredientID IN ("
+                   + "            SELECT IngredientID"
+                   + "            FROM user_restrictions"
+                   + "            WHERE UserID = ?" // 1st ?
+                   + "        )"
+                   + "    )"
+                   + "    AND NOT EXISTS (" // filter out recipes with cooking methods that user does not have
+                   + "        SELECT 1"
+                   + "        FROM recipe_cookingmethods"
+                   + "        WHERE RecipeID = recipes.RecipeID"
+                   + "        AND MethodID NOT IN ("
+                   + "            SELECT MethodID"
+                   + "            FROM user_cooking_method"
+                   + "            WHERE UserID = ?" // 2nd ?
+                   + "        )"
+                   + "    )"
+                   + "    AND (";
+        
+        for (int i = 0; i < sanitizedKeywords.size(); i++) { // filter in recipes with matched keywords
+            sql += "Name LIKE ?"; // 2nd + keywords.size() ?
+            if (i < sanitizedKeywords.size() - 1) {
+                sql += " OR ";
+            }
+        }
+        sql += "    )"
+             + "    AND NOT EXISTS (" // filter out recipes that need ingredients user does not have
+             + "        SELECT 1"
+             + "        FROM recipe_ingredients"
+             + "        WHERE RecipeID = recipes.RecipeID"
+             + "        AND IngredientID NOT IN ("
+             + "            SELECT IngredientID"
+             + "            FROM users_ingredients"
+             + "            WHERE UserID = ?" // 3rd + keywords.size() ?
+             + "        )"
+             + "    )";
+
+        if (latest) {
+            sql += " ORDER BY RecipeID DESC";
+        }
+        sql += ");";
+        try {
+            DbConnection dbCon = new DbConnection();
+            Connection con = dbCon.getConnection();
+
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
+                int parameterIndex = 1;
+                ps.setInt(parameterIndex++, UserId); // 1st ?
+                ps.setInt(parameterIndex++, UserId); // 2nd ?
+                for (String keyword : sanitizedKeywords) {
+                    ps.setString(parameterIndex++, "%" + keyword + "%"); // 2nd + keywords.size() ?
+                }
+                if (useUserIngredients) {
+                    ps.setInt(parameterIndex++, UserId); // 3rd + keywords.size() ?
+                }
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        Recipe recipe = new Recipe();
+                        recipe.setId(rs.getInt("RecipeID"));
+                        recipe.setName(rs.getString("Name"));
+                        recipe.setInstructions(rs.getString("Instructions"));
+                        recipe.setTime(rs.getInt("Time"));
+                        recipe.setServings(rs.getInt("Servings"));
+                        recipe.setUserId(rs.getInt("UserID"));
+                        recipe.setImageId(rs.getInt("ImageID"));
+                        recipes.add(recipe);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            log.error("Error fetching recipes: " + e.getMessage(), e);
+        }
+        return recipes;
+    }
+
 }
