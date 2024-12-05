@@ -112,15 +112,27 @@ public class IngredientDaoImpl implements IngredientDao {
     public List<Recipe> getRecipesByDietaryRestrictions(int userId) {
         List<Recipe> recipes = new ArrayList<>();
 
-        String sql = "	SELECT recipeID\r\n"
-        		+ "		FROM recipes\r\n"
-        		+ "		WHERE RecipeID NOT IN(\r\n"
-        		+ "	   		SELECT DISTINCT RecipeID\r\n"
-        		+ "    		FROM recipe_ingredients\r\n"
-        		+ "    		WHERE IngredientID IN (\r\n"
-        		+ "		   		SELECT IngredientID\r\n"
-        		+ "        		FROM user_restrictions\r\n"
-        		+ "        		WHERE UserID = ?));";
+        String sql = "	SELECT recipeID"
+        		+ "		FROM recipes"
+        		+ "		WHERE RecipeID NOT IN ("
+        		+ "	   		SELECT DISTINCT RecipeID"
+        		+ "    		FROM recipe_ingredients"
+        		+ "    		WHERE IngredientID IN ("
+        		+ "		   		SELECT IngredientID"
+        		+ "        		FROM user_restrictions"
+        		+ "        		WHERE UserID = ?"
+        		+ "			)"
+        		+ "		)"
+        		+ "		AND NOT EXISTS ("
+        		+ "    		SELECT 1"
+        		+ "    		FROM recipe_cookingmethods rc"
+        		+ "    		WHERE rc.RecipeID = r.RecipeID"
+        		+ "    		AND rc.MethodID NOT IN ("
+        		+ "        		SELECT MethodID"
+        		+ "        		FROM user_cooking_method"
+        		+ "        		WHERE UserID = ?"
+        		+ "    		)"
+        		+ "		);";
 
         try {
             DbConnection dbCon = new DbConnection();
