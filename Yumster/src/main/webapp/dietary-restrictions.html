@@ -147,7 +147,6 @@
             if (!data.authenticated) {
                 window.location.href = `LoginPage.html?returnUrl=${encodeURIComponent(window.location.href)}`;
             } else {
-                await loadUserRestrictions();
                 setupButtons();
             }
         } catch (error) {
@@ -383,7 +382,7 @@ async function addRestriction(ingredientId, ingredientName) {
     
 
     // Initialize page
-        document.addEventListener('DOMContentLoaded', async () => {
+    document.addEventListener('DOMContentLoaded', async () => {
         await checkAuth();
         await loadUserRestrictions();
     });
