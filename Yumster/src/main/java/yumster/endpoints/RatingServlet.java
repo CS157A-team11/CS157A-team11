@@ -41,6 +41,7 @@ public class RatingServlet extends HttpServlet {
                 return;
             }
 
+            
             String pathInfo = request.getPathInfo();
             if (pathInfo != null && pathInfo.length() > 1) {
                 int recipeId = Integer.parseInt(pathInfo.substring(1));

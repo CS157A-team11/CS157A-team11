@@ -120,7 +120,6 @@ public class RatingDaoImpl implements RatingDao {
             rs.close();
             ps.close();
 
-            // Then update the recipes table
             String updateSql = "UPDATE recipes SET Reputation = ? WHERE RecipeID = ?";
             ps = con.prepareStatement(updateSql);
             ps.setInt(1, totalRating);
