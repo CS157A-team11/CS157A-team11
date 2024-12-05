@@ -334,7 +334,7 @@ public class RecipeDaoImpl implements RecipeDao {
         try {
             DbConnection dbCon = new DbConnection();
             Connection con = dbCon.getConnection();
-            String sql = "SELECT RecipeID, Name, Instructions, Time, Servings, UserID, Reputation, ImageId FROM recipes ORDER BY Reputation, RecipeID DESC LIMIT ? OFFSET ?;";
+            String sql = "SELECT RecipeID, Name, Instructions, Time, Servings, UserID, Reputation, ImageId FROM recipes ORDER BY Reputation DESC, RecipeId DESC LIMIT ? OFFSET ?;";
             try (PreparedStatement ps = con.prepareStatement(sql)) {
             	ps.setInt(1, limit);
             	ps.setInt(2, min);

@@ -186,6 +186,7 @@
             Loading more recipes...
         </div>
     </div>
+</body>
 
     <script>
         // Global variables
@@ -320,7 +321,7 @@ function populateCookingMethodFilters(methods) {
     
     tagFilters.appendChild(methodsSection);
 }
-    
+		var timer = null;
         // Load recipes
         async function loadRecipes() {
             if (loading || !hasMoreRecipes) return;
@@ -348,6 +349,7 @@ function populateCookingMethodFilters(methods) {
             	showError("Failed to load recipes");
             } finally {
                 toggleLoading(false);
+                timer = null;
             }
         }
     
@@ -359,26 +361,35 @@ function populateCookingMethodFilters(methods) {
                 const col = document.createElement('div');
                 col.className = 'col-md-4 mb-4';
                 col.innerHTML = `
-                    <div class="recipe-card">
-                        <img src="./images/${recipe.imageId}.jpg" alt="Image of ${recipe.name}" class="recipe-image">
-                        <div class="recipe-info">
-                            <h5>${recipe.name}</h5>
-                            <div class="upvotes">
-                                <i class="fas fa-arrow-up"></i> ${recipe.reputation}
-                            </div>
-                        </div>
-                    </div>
+                	<a href="./view-recipe.html?id=${recipe.id}"
+	                    <div class="recipe-card">
+	                        <img src="./images/${recipe.imageId}.jpg" alt="Image of ${recipe.name}" class="recipe-image">
+	                        <div class="recipe-info">
+	                            <h5>${recipe.name}</h5>
+	                            <div class="upvotes">
+	                                <i class="fas fa-arrow-up"></i> ${recipe.reputation}
+	                            </div>
+	                        </div>
+	                    </div>
+	               	</a>
                 `;
                 grid.appendChild(col);
             });
         }
-    
-        // Infinite scroll handling
-        window.addEventListener('scroll', () => {
-            if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 1000) {
-                loadRecipes();
+        
+        window.onscroll = function(ev) {
+            if ((window.innerHeight + Math.round(window.scrollY) + 5) >= document.body.offsetHeight) {
+            	// add 5 for fuzzing.
+           		console.log("CALLED");
+        		if (timer != null) {
+            		// called, just wait.
+           		}
+           		else {
+           		  timer = window.setTimeout(loadRecipes, 100);
+           		}
             }
-        });
+        };
+
     
         // Filter handling
         function getActiveFilters() {
@@ -451,5 +462,4 @@ document.getElementById('logoutBtn').addEventListener('click', async function(e)
         // Initialize page
         checkAuth();
     </script>
-</body>
 </html>
