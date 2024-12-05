@@ -62,6 +62,19 @@
             opacity: 0.65;
             cursor: not-allowed;
         }
+        .user-rating {
+    font-size: 1.1rem;
+}
+
+.recipe-reputation {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.reputation-icon {
+    font-size: 1.2rem;
+    margin-left: 5px;
+}
 
 
     </style>
@@ -94,8 +107,42 @@
                    <b><label for="recipe-servings" class="form-label">Servings</label></b>
                    <p id="recipe-servings"></p>
                </div>
+               <div class="mb-3 flex">
+    <div class="d-flex justify-content-between align-items-center">
+        <!-- Left side: User's rating -->
+        <div class="user-rating">
+            <b><label>Your Rating:</label></b>
+            <span id="user-rating">Not rated yet</span>
+            <button id="edit-rating-btn" class="btn btn-sm btn-secondary ms-2" onclick="editRating()" style="display: none;">
+                Edit Rating
+            </button>
+        </div>
+        
+        <!-- Right side: Total reputation -->
+        <div class="recipe-reputation">
+        <b><label>Reputation:</label></b>
+            <span id="reputation-count">0</span>
+            <span class="reputation-icon">👍</span>
         </div>
     </div>
+</div>
+
+<!-- Rate Recipe Button -->
+<div class="text-center mt-3">
+    <button id="rate-recipe-btn" class="btn btn-primary" onclick="rateRecipe()">
+        Rate This Recipe
+    </button>
+</div>
+               
+        </div>
+    </div>
+</div>
+
+<!-- Back Button -->
+<div class="text-center mt-2">
+    <button class="btn btn-secondary" onclick="goBack()">
+        Back
+    </button>
 </div>
 
 <script>
@@ -130,40 +177,48 @@
             }, 1500);
         }
 
-   	function populate() {
-   		let recName = document.getElementById("recipe-name");
-   		let recInstructions = document.getElementById("recipe-instructions");
-   		let recTime = document.getElementById("recipe-time");
-   		let recServings = document.getElementById("recipe-servings");
-   		let ingDiv = document.getElementById("ingredients-div");
-   		let id = new URL(window.location).searchParams.get("id");
-   		var xhr = new XMLHttpRequest();
-	   	xhr.open("GET", "./api/v1/recipe/" + id);
-	   	xhr.onload = function(event) {
-	   		let resp = JSON.parse(event.target.response);
-	   		if (resp.status === "success") {
-	   			recName.innerHTML = resp.data.name;
-	   			recInstructions.innerHTML = resp.data.instructions;
-	   			recTime.innerHTML = resp.data.time + " minutes";
-	   			recServings.innerHTML = resp.data.servings + " servings";
+        async function populate() {
+            try {
+                let recName = document.getElementById("recipe-name");
+                let recInstructions = document.getElementById("recipe-instructions");
+                let recTime = document.getElementById("recipe-time");
+                let recServings = document.getElementById("recipe-servings");
+                let ingDiv = document.getElementById("ingredients-div");
+                let id = new URL(window.location).searchParams.get("id");
 
-		   		resp.ingredients.map((item) => {
-		   			var div = document.createElement("div");
-		   	   		var ingGrams = document.createElement("p");
-		   	   		var ingName = document.createElement("p");
-		   	   		div.style.display = "flex";
-		   	   		ingName.style.marginLeft = "0.25rem";
-		   	   		ingGrams.innerHTML = item.quantity + " grams: ";
-		   	   		ingName.innerHTML = item.ingredientName;
-		   	   		div.append(ingGrams);
-		   	   		div.append(ingName);
-		   	   		ingDiv.append(div);
-		   		});
-	   		}
-	   	};
-	   	// or onerror, onabort
-	   	xhr.send();
-   	}
+                const response = await fetch(`./api/v1/recipe/${id}`, {
+                    credentials: 'include'
+                });
+                const resp = await response.json();
+
+                if (resp.status === "success" && resp.data) {
+                    recName.innerHTML = resp.data.name || 'No name available';
+                    recInstructions.innerHTML = resp.data.instructions || 'No instructions available';
+                    recTime.innerHTML = (resp.data.time || '0') + " minutes";
+                    recServings.innerHTML = (resp.data.servings || '0') + " servings";
+
+                    if (resp.data.ingredients && Array.isArray(resp.data.ingredients)) {
+                        resp.data.ingredients.forEach((item) => {
+                            var div = document.createElement("div");
+                            var ingGrams = document.createElement("p");
+                            var ingName = document.createElement("p");
+                            div.style.display = "flex";
+                            ingName.style.marginLeft = "0.25rem";
+                            ingGrams.innerHTML = (item.quantity || '0') + " grams: ";
+                            ingName.innerHTML = item.ingredientName || 'Unknown ingredient';
+                            div.append(ingGrams);
+                            div.append(ingName);
+                            ingDiv.append(div);
+                        });
+                    } else {
+                        ingDiv.innerHTML = '<p>No ingredients available</p>';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading recipe:', error);
+                showError("Failed to load recipe data");
+            }
+        }
 
     function handleCancel() {
         window.location.href = returnUrl;
@@ -188,12 +243,88 @@
             timer = setTimeout(callback, ms);
         }  
     }();
+    
+    async function loadRatingData() {
+        try {
+            const recipeId = new URL(window.location).searchParams.get("id");
+            const response = await fetch(`./api/v1/ratings/${recipeId}`, {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
+            const data = await response.json();
+            if (data.status === 'success') {
+                updateRatingDisplay(data.rating, data.reputation);
+            }
+        } catch (error) {
+            console.error('Error loading rating data:', error);
+        }
+    }
+
+    /* function updateRatingDisplay(userRating, reputation) {
+        const userRatingElement = document.getElementById('user-rating');
+        const editButton = document.getElementById('edit-rating-btn');
+        const rateButton = document.getElementById('rate-recipe-btn');
+        const reputationElement = document.getElementById('reputation-count');
+        console.log(userRating)
+        if (userRatingElement) {
+            userRatingElement.innerHTML = `${userRating} ⭐`;
+            editButton.style.display = 'inline-block';
+            rateButton.style.display = 'none';
+        } else {
+            userRatingElement.textContent = 'Not rated yet';
+            editButton.style.display = 'none';
+            rateButton.style.display = 'inline-block';
+        }
+        
+        reputationElement.innerHTML = reputation || 0;
+    } */
+    
+    function updateRatingDisplay(userRating, reputation) {
+        const userRatingElement = document.getElementById('user-rating');
+        const editButton = document.getElementById('edit-rating-btn');
+        const rateButton = document.getElementById('rate-recipe-btn');
+        const reputationElement = document.getElementById('reputation-count');
+
+        if (userRating) {
+            userRatingElement.innerHTML = `${userRating} ⭐`;
+            editButton.style.display = 'inline-block';
+            rateButton.style.display = 'none';
+        } else {
+            userRatingElement.textContent = 'Not rated yet';
+            editButton.style.display = 'none';
+            rateButton.style.display = 'inline-block';
+        }
+        
+        reputationElement.textContent = reputation || 0;
+    }
+    function rateRecipe() {
+        const recipeId = new URL(window.location).searchParams.get("id");
+        window.location.href = `recipe-rating.html?recipeId=${recipeId}&returnUrl=${encodeURIComponent(window.location.href)}`;
+    }
+
+    function editRating() {
+        const recipeId = new URL(window.location).searchParams.get("id");
+        window.location.href = `recipe-rating.html?recipeId=${recipeId}&returnUrl=${encodeURIComponent(window.location.href)}&edit=true`;
+    }
+
+    function goBack() {
+        const returnUrl = new URLSearchParams(window.location.search).get('returnUrl');
+        window.location.href = returnUrl || 'home.html';
+    }
     // Initialize page
-    window.addEventListener('load', () => {
-	    checkAuth();
-	    populate();  	
-    });
+    window.addEventListener('load', async () => {
+    await checkAuth();
+    populate();
+    await loadRatingData();
+});
 </script>
 
 </body>

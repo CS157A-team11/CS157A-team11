@@ -182,20 +182,20 @@
         }
     
         // Check authentication
-    async function checkAuth() {
+  async function checkAuth() {
     try {
-    const response = await fetch('./api/v1/auth/check', {
-    credentials: 'include'
-    });
-    const data = await response.json();
-    if (!data.authenticated) {
-    window.location.href = `LoginPage.html?redirect=${encodeURIComponent(window.location.href)}`;
-    }
+        const response = await fetch('./api/v1/auth/checkingNow', {
+            credentials: 'include'
+        });
+        const data = await response.json();
+        if (!data.authenticated) {
+           // window.location.href = `LoginPage.html?redirect=${encodeURIComponent(window.location.href)}`;
+        }
     } catch (error) {
-    showError("Authentication failed");
-    setTimeout(() => window.location.href = "LoginPage.html", 2000);
+        showError("Authentication failed");
+        setTimeout(() => window.location.href = "LoginPage.html", 2000);
     }
-    }
+}
     
     async function loadExistingRating() {
     try {
@@ -215,37 +215,46 @@
     }
     
     async function submitRating() {
-    try {
-    toggleLoading(true);
-    const response = await fetch('./api/v1/ratings', {
-    method: 'POST',
-    headers: {
-    'Content-Type': 'application/json'
-    },
-    credentials: 'include',
-    body: JSON.stringify({
-    recipeId: recipeId,
-    rating: currentRating
-    })
-    });
-    
-    const data = await response.json();
-    
-    if (data.status === "success") {
-    showSuccess("Rating submitted successfully!");
-    setTimeout(() => window.location.href = `recipe.html?id=${recipeId}`, 1500);
-    } else {
-    showError(data.message || "Failed to submit rating");
-    }
-    } catch (error) {
-    showError("An error occurred. Please try again.");
-    } finally {
-    toggleLoading(false);
-    }
+        try {
+            toggleLoading(true);
+            const response = await fetch('./api/v1/ratings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    recipeId: parseInt(recipeId),
+                    rating: parseInt(currentRating)
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            if (data.status === "success") {
+                showSuccess("Rating submitted successfully!");
+                const returnUrl = new URLSearchParams(window.location.search).get('returnUrl');
+                setTimeout(() => {
+                    window.location.href = returnUrl || `view-recipe.html?id=${recipeId}`;
+                }, 1500);
+            } else {
+                throw new Error(data.message || "Failed to submit rating");
+            }
+        } catch (error) {
+            console.error('Rating submission error:', error);
+            showError("Failed to submit rating");
+        } finally {
+            toggleLoading(false);
+        }
     }
     
     function cancelRating() {
-    window.location.href = `recipe.html?id=${recipeId}`;
+        const returnUrl = new URLSearchParams(window.location.search).get('returnUrl');
+        window.location.href = returnUrl || `view-recipe.html?id=${recipeId}`;
     }
 
     // Initialize the page
