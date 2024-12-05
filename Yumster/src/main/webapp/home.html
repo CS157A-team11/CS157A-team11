@@ -169,6 +169,7 @@
             <select class="form-select w-auto ms-auto" id="sortSelect">
                 <option value="recommended">Recommended</option>
                 <option value="upvotes">Most Upvoted</option>
+				<option value="ingredients">Matching Ingredients</option>
                 <option value="newest">Newest First</option>
             </select>
         </div>
@@ -328,12 +329,11 @@ function populateCookingMethodFilters(methods) {
                 const filters = getActiveFilters();
                 const sortBy = document.getElementById('sortSelect').value;
                 
-                const response = await fetch(`./api/v1/recipes?page=${page}&limit=${recipesPerPage}&sort=${sortBy}`,  {
+                const response = await fetch(`./api/v1/recipe-search?page=${page}&limit=${recipesPerPage}&sort=${sortBy}`,  {
                     method: 'GET',
                     credentials: 'include',
-                    body: JSON.stringify(filters)
                 });
-    
+    			// body: JSON.stringify(filters)
                 const data = await response.json();
                 
                 if (data.recipes.length < recipesPerPage) {
