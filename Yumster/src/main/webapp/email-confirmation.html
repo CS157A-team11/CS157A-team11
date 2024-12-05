@@ -9,6 +9,7 @@
         body { 
             background-color: #f8f9fa; 
         }
+        
         .container { 
             margin-top: 50px; 
         }
@@ -50,6 +51,60 @@
             min-width: 300px;
             text-align: center;
         }
+        :root {
+    --primary-color: #ff6b6b;
+    --secondary-color: #4ecdc4;
+    --accent-color: #ffe66d;
+    --text-dark: #2d3436;
+    --text-light: #636e72;
+    --background-light: #f9f9fa;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+                url('Background image.jpeg');
+    background-size: cover;
+    background-position: center;
+    min-height: 100vh;
+}
+
+.card, .login-container, .success-container {
+    background: rgba(255, 255, 255, 0.95);
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border: none;
+    border-radius: 25px;
+    padding: 0.8rem 2rem;
+    transition: transform 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: darken(var(--primary-color), 10%);
+    transform: translateY(-2px);
+}
+        .success-animation {
+    color: var(--primary-color);
+    font-size: 3rem;
+    margin: 2rem 0;
+}
+
+.card-title {
+    color: var(--text-dark);
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.resend-message {
+    color: var(--primary-color);
+    font-weight: 500;
+}
     </style>
 </head>
 <body>
