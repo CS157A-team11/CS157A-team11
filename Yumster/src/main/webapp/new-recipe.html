@@ -106,6 +106,7 @@
                 	<!-- FILL INGREDIENTS -->
 	            </div>
 	            <button type="button" onclick="addElementToForm();">Add Ingredient</button>
+        		<button type="button" id="remove-ingredient" style="visibility: hidden" onclick="removeIngredient();">Remove Ingredient</button>
                 <div class="text-center">
                     <button type="submit" id="change-btn" class="btn btn-primary">Submit</button>
                     <button type="button" class="btn btn-secondary" onclick="handleCancel()">Cancel</button>
@@ -155,13 +156,20 @@
                 const formData = new FormData(this);
                 let quantity = [];
                 let ingredients = [];
+                let methods = [];
                 for (let i = 1; i < counter; i++) {
-                	console.log(i);
                 	quantity.push(Number(document.getElementById("ingredient-grams-" + i).value));
                 	ingredients.push(Number(document.getElementById("ingredient-match-" + i).value));
                 }
+                for (let i = 0; i < cookingMethods.length; i++) {
+                	let elem = document.getElementById(cookingMethods[i]);
+                	if (elem.checked) {
+                		methods.push(Number(elem.value));
+                	}
+                }
                 formData.append("quantity", JSON.stringify(quantity));
                 formData.append("ingredients", JSON.stringify(ingredients));
+                formData.append("methods", JSON.stringify(methods));
                 const response = await fetch('./api/v1/recipe', {
                     method: 'POST',
                     credentials: 'include',
@@ -182,30 +190,29 @@
             }
         });
 
-        const cookingMethods = [
-            'Boiling',    // ID: 1
-            'Grilling',   // ID: 2
-            'Frying',     // ID: 3
-            'Baking',     // ID: 4
-            'Roasting',   // ID: 5
-            'Steaming',   // ID: 6
-            'Sauteing',   // ID: 7
-            'Broiling',   // ID: 8
-            'Poaching',   // ID: 9
-            'Simmering'   // ID: 10
-        ];
+        const cookingMethods = [];
         
         function populateMethods() {
-            const container = document.getElementById('methods-container');
-            cookingMethods.forEach(method => {
-                const div = document.createElement('div');
-                div.className = 'form-check';
-                div.innerHTML = `
-                    <input class="form-check-input" type="checkbox" value="${method}" name="${method}" id="${method.toLowerCase()}">
-                    <label class="form-check-label" for="${method.toLowerCase()}">${method}</label>
-                `;
-                container.appendChild(div);
-            });
+        	var xhr = new XMLHttpRequest();
+    	   	xhr.open("GET", "./api/v1/cooking-methods");
+    	   	xhr.onload = function(event) {
+    	   		let resp = JSON.parse(event.target.response);
+    	   		if (resp.status === "success") {	   			
+    	            const container = document.getElementById('methods-container');
+    	            resp.methods.forEach((method) => {
+    	                const div = document.createElement('div');
+    	                div.className = 'form-check';
+    	                div.innerHTML = `
+    	                    <input class="form-check-input" type="checkbox" value="${method.id}" name="${method.name}" id="cookingmethod-${method.name.toLowerCase()}">
+    	                    <label class="form-check-label" for="cookingmethod-${method.name.toLowerCase()}">${method.name}</label>
+    	                `;
+    	                container.appendChild(div);
+    	                cookingMethods.push("cookingmethod-"+method.name.toLowerCase());
+    	            });
+    	   		}
+    	   	};
+    	   	// or onerror, onabort
+    	   	xhr.send();
         }
 		
     let counter = 1;
@@ -226,6 +233,7 @@
    		var select = document.createElement("select");
    		div.className = "mb-3 input-group";
    		div.style = "align-items: center;";
+   		div.id = 'ingredient-div-' + counter;
    		input1.type = "number";
    		input1.id = "ingredient-grams-" + counter;
    		input1.className = "form-control";
@@ -252,7 +260,21 @@
    		div.appendChild(select);
    		form_div.appendChild(div);
    		counter++;
+   		if (counter > 2) {
+	   		document.getElementById("remove-ingredient").style.visibility = "visible";		
+   		}
    	};
+   	
+   	function removeIngredient() {
+   		if (counter <= 2){
+   			return
+   		};
+   		document.getElementById("ingredient-div-" + (counter-1)).remove();
+   		counter--;
+   		if (counter <= 2){
+   	   		document.getElementById("remove-ingredient").style.visibility = "hidden";
+   		};
+   	}
    	
    	function populateSelect(inpId, selId) {
    		let selectTag = document.getElementById(selId);

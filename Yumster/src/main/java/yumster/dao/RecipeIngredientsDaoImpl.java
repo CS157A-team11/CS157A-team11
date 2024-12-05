@@ -10,17 +10,17 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import yumster.obj.CookingMethod;
+import yumster.obj.Ingredient;
 import yumster.obj.Recipe;
 
-public class RecipeCookingMethodDaoImpl implements RecipeCookingMethodDao {
-    private Log log = LogFactory.getLog(RecipeCookingMethodDaoImpl.class);
+public class RecipeIngredientsDaoImpl implements RecipeIngredientsDao {
+    private Log log = LogFactory.getLog(RecipeIngredientsDaoImpl.class);
 
-    public List<Integer> getRecipeCookingMethods(int recipeId) {    
+    public List<Integer> getRecipeIngredients(int recipeId) {    
         try {
             DbConnection dbCon = new DbConnection();
             Connection con = dbCon.getConnection();
-            String sql = "SELECT MethodId FROM recipe_cookingmethods WHERE recipeId = ?;";
+            String sql = "SELECT ingredientId, quantity FROM recipe_ingredients WHERE recipeId = ?;";
             try (PreparedStatement ps = con.prepareStatement(sql)) {
         	ps.setInt(1, recipeId);
             ResultSet rs = ps.executeQuery();
@@ -36,20 +36,21 @@ public class RecipeCookingMethodDaoImpl implements RecipeCookingMethodDao {
         return null;
     };
     
-    public boolean insertRecipeMethods(int recipeId, List<Integer> methodIds) {
+    public boolean insertRecipeIngredients(int recipeId, List<Integer> ingredients, List<Integer> quantity) {
     	try {
             DbConnection dbCon = new DbConnection();
             Connection con = dbCon.getConnection();
-            StringBuilder sql = new StringBuilder("INSERT INTO recipe_cookingmethods (recipeId, methodId) VALUES");
-            sql.append(" (?, ?)");
-            for (int i = 1; i < methodIds.size(); i++) {            	
-            	sql.append(", (?, ?)");
+            StringBuilder sql = new StringBuilder("INSERT INTO recipe_ingredients (recipeId, ingredientId, quantity) VALUES");
+            sql.append(" (?, ?, ?)");
+            for (int i = 1; i < ingredients.size(); i++) {            	
+            	sql.append(", (?, ?, ?)");
             }
             sql.append(";");
             try (PreparedStatement ps = con.prepareStatement(sql.toString())) {
-        	for (int i = 0; i < methodIds.size(); i++) {            	
-            	ps.setInt((2*i)+1, recipeId);
-            	ps.setInt((2*i)+2, methodIds.get(i));
+        	for (int i = 0; i < ingredients.size(); i++) {            	
+            	ps.setInt((3*i)+1, recipeId);
+            	ps.setInt((3*i)+2, ingredients.get(i));
+            	ps.setInt((3*i)+3, quantity.get(i));
             }
             return ps.execute();
         }
@@ -59,11 +60,11 @@ public class RecipeCookingMethodDaoImpl implements RecipeCookingMethodDao {
         return false;
     };
     
-    public boolean deleteRecipeMethods(int recipeId) {
+    public boolean deleteRecipeIngredients(int recipeId) {
     	try {
             DbConnection dbCon = new DbConnection();
             Connection con = dbCon.getConnection();
-            String sql = "DELETE FROM recipe_cookingmethods WHERE recipeId = ?;";
+            String sql = "DELETE FROM recipe_ingredients WHERE recipeId = ?;";
 
             try (PreparedStatement ps = con.prepareStatement(sql)) {
             	return ps.execute();
