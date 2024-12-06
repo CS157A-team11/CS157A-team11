@@ -13,32 +13,56 @@
         .container {
             margin-top: 50px;
         }
-
+		
+		/* x button */
         .ingredient-chip {
-            display: inline-block;
-            background-color: #e9ecef;
-            border-radius: 25px;
-            padding: 5px 10px;
-            margin: 5px;
-            cursor: pointer;
-            position: relative;
-        }
+		    display: flex; /* Use flexbox for proper alignment */
+		    align-items: center;
+		    background-color: #e9ecef;
+		    border-radius: 25px;
+		    padding: 5px 10px;
+		    margin: 5px;
+		    position: relative;
+		}
+		
+		.ingredient-chip span {
+		    font-size: 14px;
+		    margin-right: 10px;
+		}
+		
+		.ingredient-chip input {
+		    width: 70px; /* Adjust width for proper spacing */
+		    margin-left: 10px;
+		    margin-right: 5px; /* Add some spacing before 'grams' */
+		}
+		
+		.ingredient-chip input[type="number"] {
+		    -moz-appearance: textfield; /* Removes arrows for Firefox */
+		}
+		
+		.ingredient-chip span.grams-label {
+		    font-size: 14px;
+		    margin-left: 5px;
+		    color: #6c757d; /* Optional muted text color */
+		}
+		
+		.ingredient-chip button {
+		    background: none;
+		    border: 1px solid #dc3545; /* Add a border to match the design */
+		    border-radius: 50%; /* Make the button circular */
+		    font-size: 16px;
+		    color: #dc3545;
+		    cursor: pointer;
+		    width: 30px; /* Match the height of the input field */
+		    height: 30px; /* Match the height of the input field */
+		    display: flex;
+		    align-items: center; /* Center the 'x' inside the button */
+		    justify-content: center; /* Center the 'x' inside the button */
+		    margin-left: 10px; /* Add spacing between 'grams' and the button */
+		    position: relative; /* Ensure alignment consistency */
+		}
 
-        .ingredient-chip span {
-            font-size: 14px;
-            margin-right: 10px;
-        }
 
-        .ingredient-chip button {
-            background: none;
-            border: none;
-            font-size: 16px;
-            color: #dc3545;
-            cursor: pointer;
-            position: absolute;
-            right: 5px;
-            top: 3px;
-        }
 
         .ingredient-chip:hover {
             background-color: #dee2e6;
@@ -65,12 +89,6 @@
 <div class="container">
     <h3 class="text-center mb-4">Add Ingredients</h3>
     <form id="user-ingredients-form" method="post">
-        <!-- User ID Input -->
-        <div class="mb-3">
-            <label for="user-id" class="form-label">User ID</label>
-            <input type="number" class="form-control" id="user-id" name="user_id" placeholder="Enter your User ID" required>
-        </div>
-
         <!-- Ingredient Search -->
         <div class="mb-3 position-relative">
             <label for="ingredient-search" class="form-label">Search Ingredients</label>
@@ -93,6 +111,46 @@
 
 <script>
     const selectedIngredients = [];
+    let userId = null; // User ID will be dynamically retrieved via checkAuth
+
+    // Authentication Check
+    async function checkAuth() {
+        try {
+            const response = await fetch('./api/v1/auth/checkingNow', {
+                credentials: 'include'
+            });
+            const data = await response.json();
+            if (data.authenticated) {
+                userId = data.userId; // Assuming `userId` is returned from the `checkingNow` endpoint
+            } else {
+                window.location.href = `LoginPage.html?returnUrl=${encodeURIComponent(window.location.href)}`;
+            }
+        } catch (error) {
+            showError("Authentication failed");
+            setTimeout(() => window.location.href = "LoginPage.html", 2000);
+        }
+    }
+
+    // Show success message and redirect
+    function showSuccess(message) {
+        const successDiv = document.createElement('div');
+        successDiv.className = 'alert alert-success';
+        successDiv.textContent = message;
+        document.body.appendChild(successDiv);
+        setTimeout(() => {
+            successDiv.remove();
+            window.location.href = 'home.html';
+        }, 1500);
+    }
+
+    // Show error messages
+    function showError(message) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'alert alert-danger';
+        errorDiv.textContent = message;
+        document.body.appendChild(errorDiv);
+        setTimeout(() => errorDiv.remove(), 3000);
+    }
 
     // Dynamically search ingredients
     document.getElementById('ingredient-search').addEventListener('input', function () {
@@ -104,9 +162,8 @@
             return;
         }
 
-        // Make a POST request to the IngredientSearch servlet
         const form_data = new FormData();
-      	form_data.append("keywords", JSON.stringify(query.split(" ")));
+        form_data.append("keywords", JSON.stringify(query.split(" ")));
 
         fetch('./api/v1/ingredient-search', {
             method: 'POST',
@@ -124,6 +181,7 @@
                     li.setAttribute('data-id', ingredient.ingredientId);
                     li.addEventListener('click', function () {
                         addIngredient(ingredient.ingredientId, ingredient.ingredientName);
+                        document.getElementById('ingredient-search').value = '';
                         resultsContainer.classList.add('d-none'); // Hide results after selection
                     });
                     resultsContainer.appendChild(li);
@@ -143,7 +201,7 @@
     // Add ingredient to selected list
     function addIngredient(id, name) {
         if (!selectedIngredients.some(ingredient => ingredient.id === id)) {
-            selectedIngredients.push({ id, name });
+            selectedIngredients.push({ id, name, quantity: 0 });
             updateSelectedIngredients();
         }
     }
@@ -167,37 +225,49 @@
             chip.className = 'ingredient-chip';
             chip.innerHTML = `
                 <span>${ingredient.name}</span>
+                <input type="number" value="${ingredient.quantity}" min="0" oninput="updateQuantity(${ingredient.id}, this.value)">
+                <span class="grams-label">grams</span>
                 <button type="button" onclick="removeIngredient(${ingredient.id})">&times;</button>
             `;
             container.appendChild(chip);
         });
     }
 
+    function updateQuantity(id, value) {
+        const ingredient = selectedIngredients.find(ingredient => ingredient.id === id);
+        if (ingredient) {
+            ingredient.quantity = parseInt(value) || 0;
+        }
+    }
+
     // Submit selected ingredients
-    document.getElementById('user-ingredients-form').addEventListener('submit', function (e) {
+    document.getElementById('ingredients-form').addEventListener('submit', function (e) {
         e.preventDefault();
 
-        const userId = document.getElementById('user-id').value;
-        if (selectedIngredients.length === 0) {
-            alert('Please select at least one ingredient.');
+        if (!userId) {
+            alert("User ID not found. Please log in again.");
             return;
         }
 
-        // Submit selected ingredients to the backend
-        fetch('./api/v1/user-ingredients', {
+        if (selectedIngredients.length === 0) {
+            alert('Please select at least one ingredient and set a quantity.');
+            return;
+        }
+
+        fetch('./api/v1/useringredients', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
                 user_id: userId,
-                ingredients: selectedIngredients.map(ingredient => ingredient.id),
+                ingredients: selectedIngredients
             })
         })
         .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {
-                alert('Ingredients added successfully!');
+                showSuccess('Ingredients added successfully!');
                 selectedIngredients.length = 0; // Clear the temporary list
                 updateSelectedIngredients(); // Refresh the display
             } else {
@@ -209,6 +279,9 @@
             alert('An error occurred. Please try again.');
         });
     });
+
+    // Initialize Authentication and User ID
+    window.addEventListener('load', checkAuth);
 </script>
 </body>
 </html>

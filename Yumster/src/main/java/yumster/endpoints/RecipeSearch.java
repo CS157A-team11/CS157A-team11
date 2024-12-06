@@ -2,6 +2,7 @@ package yumster.endpoints;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -113,13 +114,16 @@ public class RecipeSearch extends HttpServlet {
 			return;
 		}
 		
+		List<String> keywords = new Gson().fromJson(request.getParameter("keywords"), new TypeToken<List<String>>(){}.getType());
+
 		Integer min = limit*page-limit;
 		List<yumster.obj.Recipe> recipes = null;
 
 		if (user == null) {
 			recipes = recipeDao.search(min, limit, sort, 0);
-		} else {
-			recipes = recipeDao.search(min, limit, sort, user.getId());			
+		} else {		
+			recipes = recipeDao.search(min, limit, sort, user.getId());
+			recipes = recipeDao.filter(user.getId(), keywords);
 		}
 		
 		if (recipes == null) {

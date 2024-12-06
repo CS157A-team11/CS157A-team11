@@ -3,6 +3,7 @@ package yumster.dao;
 import java.util.List;
 import java.util.Map;
 import yumster.obj.Recipe;
+import yumster.obj.User;
 
 public interface RecipeDao {
     List<Recipe> getAllRecipes();
@@ -18,5 +19,5 @@ public interface RecipeDao {
     Recipe getLatestByUserId(Integer id);
     List<Recipe> search(Integer min, Integer limit, String sort, Integer userId);
     boolean setImage(Integer recipeId, Integer imageId);
-    public List<Recipe> filter(int UserId, List<String> keywords, boolean latest, boolean useUserIngredients);
+    public List<Recipe> filter(int userId, List<String> keywords);
 }
