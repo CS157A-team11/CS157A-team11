@@ -59,24 +59,21 @@ public class RecipeSearch extends HttpServlet {
 		RecipeIngredientsDao recipeIngredientsDao = new RecipeIngredientsDaoImpl();
 		
 		Cookie[] cookies = request.getCookies();
-		if (cookies == null) {
-			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-			Response res = new Response("error", "Unauthenticated Token");
-			response.getWriter().print(res.toJson());
-			return;
-		}
 		User user = null;
-		for (int i = 0; i < cookies.length; i++) {
-			String name = cookies[i].getName();
-			String value = cookies[i].getValue();
+		if (cookies != null) {
+			for (int i = 0; i < cookies.length; i++) {
+				String name = cookies[i].getName();
+				String value = cookies[i].getValue();
 
-			if (name.equals("token")) {
-				UserToken userToken = userTokenDao.getByToken(value);
-				if (userToken != null) {
-					user = userDao.getById(userToken.getUserId()); // here because scoping
-				} 
+				if (name.equals("token")) {
+					UserToken userToken = userTokenDao.getByToken(value);
+					if (userToken != null) {
+						user = userDao.getById(userToken.getUserId()); // here because scoping
+					} 
+				}
 			}
 		}
+
 
 		String pageStr = request.getParameter("page").trim();
 		String limitStr = request.getParameter("limit").trim();

@@ -165,6 +165,39 @@
            		</div>
            		<div style="width: 30%">
 				    <img id="recipe-image" src="" alt="" style="max-width:100%;"/>
+				    <div class="mt-2">
+					    <p><b>Nutrition per serving:</b></p>
+					    <div>
+						    <p id="nutrition-s-calories" class="mb-0"></p>
+						    <p id="nutrition-s-totalFat" class="mb-0"></p>
+						    <p id="nutrition-s-transFat" class="mb-0"></p>
+						    <p id="nutrition-s-polyUnsatFat" class="mb-0"></p>
+						    <p id="nutrition-s-monoUnsatFat" class="mb-0"></p>
+						    <p id="nutrition-s-satFat" class="mb-0"></p>
+						    <p id="nutrition-s-sodium" class="mb-0"></p>
+						    <p id="nutrition-s-totalCarbs" class="mb-0"></p>
+						    <p id="nutrition-s-dietaryFiber" class="mb-0"></p>
+						    <p id="nutrition-s-totalSugar" class="mb-0"></p>
+						    <p id="nutrition-s-addedSugar" class="mb-0"></p>
+						    <p id="nutrition-s-protein" class="mb-0"></p>
+					    </div>
+					    <p></p>
+					    <p><b>Nutrition per batch:</b></p>
+					    <div>
+						    <p id="nutrition-b-calories" class="mb-0"></p>
+						    <p id="nutrition-b-totalFat" class="mb-0"></p>
+						    <p id="nutrition-b-transFat" class="mb-0"></p>
+						    <p id="nutrition-b-polyUnsatFat" class="mb-0"></p>
+						    <p id="nutrition-b-monoUnsatFat" class="mb-0"></p>
+						    <p id="nutrition-b-satFat" class="mb-0"></p>
+						    <p id="nutrition-b-sodium" class="mb-0"></p>
+						    <p id="nutrition-b-totalCarbs" class="mb-0"></p>
+						    <p id="nutrition-b-dietaryFiber" class="mb-0"></p>
+						    <p id="nutrition-b-totalSugar" class="mb-0"></p>
+						    <p id="nutrition-b-addedSugar" class="mb-0"></p>
+						    <p id="nutrition-b-protein" class="mb-0"></p>
+					    </div>
+				    </div>
            		</div>
            	</div>
 			<div class="mb-3 flex">
@@ -192,6 +225,11 @@
 			        Rate This Recipe
 			    </button>
 			</div>    
+			<div id="modify-buttons" style="display: none !important" class="d-flex align-items-center justify-content-center mt-4">
+    			    <button class="btn btn-md bg-warning" onclick="editRecipe()">Edit Recipe</button>
+    			    <span style="margin: 1rem"></span>
+			        <button class="btn btn-md bg-danger text-white" onclick="deleteRecipe()">Delete Recipe</button>
+		    </div>
         </div>
     </div>
     <div class="loading-overlay" id="loadingOverlay">
@@ -232,13 +270,33 @@
         function showSuccess(message) {
             const successDiv = document.createElement('div');
             successDiv.className = 'alert alert-success';
+            successDiv.style="position: fixed; left: 50%; transform: translate(-50%, 0px); z-index: 9999";
             successDiv.textContent = message;
-            document.body.appendChild(successDiv);
+            document.body.prepend(successDiv);
             setTimeout(() => {
                 successDiv.remove();
                 // Redirect to home page after showing success message
                 window.location.href = 'home.html';
             }, 1500);
+        }
+     
+        async function deleteRecipe() {
+            let id = new URL(window.location).searchParams.get("id");
+
+        	const response = await fetch(`./api/v1/recipe/${id}`, {
+        		method: 'DELETE',
+                credentials: 'include'
+            });
+            const resp = await response.json();
+
+            if (resp.status === "success") {
+            	showSuccess("Deleted Recipe");
+            }
+        }
+        
+        function editRecipe() {
+            let id = new URL(window.location).searchParams.get("id");
+        	window.location.href = `./edit-recipe.html?id=${id}`;
         }
 
         async function populate() {
@@ -263,7 +321,24 @@
                     recInstructions.innerHTML = resp.data.instructions || 'No instructions available';
                     recTime.innerHTML = (resp.data.time || '0') + " minutes";
                     recServings.innerHTML = (resp.data.servings || '0') + " servings";
-
+					
+                    if (resp.owns) {
+                    	document.getElementById("modify-buttons").style = "";
+                    }
+                    
+				    var calories = 0;
+				    var totalFat = 0;
+				    var transFat = 0;
+				    var polyUnsatFat = 0;
+				    var monoUnsatFat = 0;
+				    var satFat = 0;
+				    var sodium = 0;
+				    var totalCarbs = 0;
+				    var dietaryFiber = 0;
+				    var totalSugar = 0;
+				    var addedSugar = 0;
+				    var protein = 0;
+                    
                     if (resp.ingredients && Array.isArray(resp.ingredients)) {
                         resp.ingredients.forEach((item) => {
                             var div = document.createElement("div");
@@ -276,7 +351,49 @@
                             div.append(ingGrams);
                             div.append(ingName);
                             ingDiv.append(div);
+                            
+                            var scaling = item.quantity/100;
+                            calories += item.energy*scaling;
+                            totalFat += item.totalFat*scaling;
+                            transFat += item.transFat*scaling;
+                            polyUnsatFat += item.polyUnsatFat*scaling;
+                            monoUnsatFat += item.monoUnsatFat*scaling;
+                            satFat += item.satFat*scaling;
+                            sodium += item.sodium*scaling;
+                            totalCarbs += item.totalCarbs*scaling;
+                            dietaryFiber += item.dietaryFiber*scaling;
+                            totalSugar += item.totalSugar*scaling;
+                            addedSugar += item.addedSugar*scaling;
+                            protein += item.protein*scaling;
                         });
+                        
+                        document.getElementById("nutrition-s-calories").innerHTML = `${(calories/resp.data.servings).toFixed(3)} kcals of Energy`;
+                        document.getElementById("nutrition-s-totalFat").innerHTML = `${(totalFat/resp.data.servings).toFixed(3)} g of Total Fat`;
+                        document.getElementById("nutrition-s-transFat").innerHTML = `${(transFat/resp.data.servings).toFixed(3)} g of Trans Fat`;
+                        document.getElementById("nutrition-s-polyUnsatFat").innerHTML = `${(polyUnsatFat/resp.data.servings).toFixed(3)} g of Poly Unsaturated Fat`;
+                        document.getElementById("nutrition-s-monoUnsatFat").innerHTML = `${(monoUnsatFat/resp.data.servings).toFixed(3)} g of Mono Unsaturated Fat`;
+                        document.getElementById("nutrition-s-satFat").innerHTML = `${(satFat/resp.data.servings).toFixed(3)} g of Saturated Fat`;
+                        document.getElementById("nutrition-s-sodium").innerHTML = `${(sodium/resp.data.servings).toFixed(3)} mg of Sodium`;
+                        document.getElementById("nutrition-s-totalCarbs").innerHTML = `${(totalCarbs/resp.data.servings).toFixed(3)} g of Total Carbohydrates`;
+                        document.getElementById("nutrition-s-dietaryFiber").innerHTML = `${(dietaryFiber/resp.data.servings).toFixed(3)} g of Dietary Fiber`;
+                        document.getElementById("nutrition-s-totalSugar").innerHTML = `${(totalSugar/resp.data.servings).toFixed(3)} g of Total Sugar`;
+                        document.getElementById("nutrition-s-addedSugar").innerHTML = `${(addedSugar/resp.data.servings).toFixed(3)} g of Added Sugar`;
+                        document.getElementById("nutrition-s-protein").innerHTML = `${(protein/resp.data.servings).toFixed(3)} g of Protein`;
+                        
+                        document.getElementById("nutrition-b-calories").innerHTML = `${(calories).toFixed(3)} kcals of Energy`;
+                        document.getElementById("nutrition-b-totalFat").innerHTML = `${(totalFat).toFixed(3)} g of Total Fat`;
+                        document.getElementById("nutrition-b-transFat").innerHTML = `${(transFat).toFixed(3)} g of Trans Fat`;
+                        document.getElementById("nutrition-b-polyUnsatFat").innerHTML = `${(polyUnsatFat).toFixed(3)} g of Poly Unsaturated Fat`;
+                        document.getElementById("nutrition-b-monoUnsatFat").innerHTML = `${(monoUnsatFat).toFixed(3)} g of Mono Unsaturated Fat`;
+                        document.getElementById("nutrition-b-satFat").innerHTML = `${(satFat).toFixed(3)} g of Saturated Fat`;
+                        document.getElementById("nutrition-b-sodium").innerHTML = `${(sodium).toFixed(3)} mg of Sodium`;
+                        document.getElementById("nutrition-b-totalCarbs").innerHTML = `${(totalCarbs).toFixed(3)} g of Total Carbohydrates`;
+                        document.getElementById("nutrition-b-dietaryFiber").innerHTML = `${(dietaryFiber).toFixed(3)} g of Dietary Fiber`;
+                        document.getElementById("nutrition-b-totalSugar").innerHTML = `${(totalSugar).toFixed(3)} g of Total Sugar`;
+                        document.getElementById("nutrition-b-addedSugar").innerHTML = `${(addedSugar).toFixed(3)} g of Added Sugar`;
+                        document.getElementById("nutrition-b-protein").innerHTML = `${(protein).toFixed(3)} g of Protein`;
+
+                        
                     } else {
                         ingDiv.innerHTML = '<p>No ingredients available</p>';
                     }
