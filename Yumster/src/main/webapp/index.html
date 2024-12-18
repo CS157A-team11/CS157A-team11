@@ -251,7 +251,7 @@ body {
             try {
                 toggleLoading(true);
                 
-                const response = await fetch(`./api/v1/recipe-search?page=${page}&limit=${recipesPerPage}&sort=recommended`,  {
+                const response = await fetch(`./api/v1/recipe-search?page=${page}&limit=${recipesPerPage}&sort=upvotes`,  {
                     method: 'GET',
                     credentials: 'include',
                 });

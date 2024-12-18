@@ -117,7 +117,9 @@ public class RecipeSearch extends HttpServlet {
 		List<yumster.obj.Recipe> recipes = null;
 
 		if (user == null) {
-			recipes = recipeDao.search(min, limit, sort, 0);
+			recipes = recipeDao.search(min, limit, "upvotes", 0);
+		} else if (sort.equals("upvotes")) {
+			recipes = recipeDao.search(min, limit, sort, user.getId());
 		} else {		
 //			recipes = recipeDao.search(min, limit, sort, user.getId());
 			recipes = recipeDao.filter(user.getId(), keywords);
