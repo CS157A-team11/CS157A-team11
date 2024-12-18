@@ -118,7 +118,7 @@ public class RecipeSearch extends HttpServlet {
 
 		if (user == null) {
 			recipes = recipeDao.search(min, limit, "upvotes", 0);
-		} else if (sort.equals("upvotes")) {
+		} else if (sort.equals("upvotes") || sort.equals("newest")) {
 			recipes = recipeDao.search(min, limit, sort, user.getId());
 		} else {		
 //			recipes = recipeDao.search(min, limit, sort, user.getId());
