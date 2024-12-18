@@ -30,6 +30,11 @@ import yumster.helper.Response;
 import yumster.obj.User;
 import yumster.obj.UserToken;
 
+/**
+ * @deprecated This file is no longer used in the project.
+ * It is kept here for reference purposes only.
+ */
+
 @WebServlet("/api/v1/recipe-filter")
 @MultipartConfig
 public class RecipeFilter extends HttpServlet {
@@ -85,9 +90,9 @@ public class RecipeFilter extends HttpServlet {
 		// Parse optional parameters
 		boolean latest = latestStr != null && latestStr.equalsIgnoreCase("true");
 		boolean useUserIngredients = useUserIngredientsStr != null && useUserIngredientsStr.equalsIgnoreCase("true");
-
+		
 		// Call the RecipeDaoImpl.filter method
-		List<yumster.obj.Recipe> recipes = recipeDao.filter(user != null ? user.getId() : 0, keywords, latest, useUserIngredients);
+		List<yumster.obj.Recipe> recipes = recipeDao.filter(user != null ? user.getId() : 0, keywords);
 
 		// Handle null results
 		if (recipes == null) {
