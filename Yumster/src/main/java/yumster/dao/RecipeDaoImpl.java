@@ -406,7 +406,7 @@ public class RecipeDaoImpl implements RecipeDao {
         List<Recipe> recipes = new ArrayList<>();
         List<String> sanitizedKeywords = sanitizeKeywords(keywords);
 
-        String sql = "SELECT DISTINCT RecipeID, Name, Instructions, Time, Servings, UserID, ImageID "
+        String sql = "SELECT DISTINCT RecipeID, Name, Instructions, Time, Servings, UserID, ImageID, Reputation "
                    + "FROM recipes "
                    + "WHERE RecipeID NOT IN ("
                    + "    SELECT DISTINCT RecipeID "
@@ -423,28 +423,33 @@ public class RecipeDaoImpl implements RecipeDao {
                    + "    WHERE rc.RecipeID = recipes.RecipeID "
                    + "    AND rc.MethodID NOT IN ("
                    + "        SELECT MethodID "
-                   + "        FROM user_cooking_method "
+                   + "        FROM users_cooking_method "
                    + "        WHERE UserID = ?"
                    + "    )"
                    + ") "
                    + "AND (";
-        for (int i = 0; i < sanitizedKeywords.size(); i++) {
-            sql += "Name LIKE ?";
-            if (i < sanitizedKeywords.size() - 1) {
-                sql += " OR ";
-            }
+        if (sanitizedKeywords.size() > 0) {
+	        for (int i = 0; i < sanitizedKeywords.size(); i++) {
+	            sql += "Name LIKE ?";
+	            if (i < sanitizedKeywords.size() - 1) {
+	                sql += " OR ";
+	            }
+	        }
+        } else {
+        	sql += "1=1";
         }
-        sql += ") "
-             + "AND NOT EXISTS ("
-             + "    SELECT 1 "
-             + "    FROM recipe_ingredients ri "
-             + "    WHERE ri.RecipeID = recipes.RecipeID "
-             + "    AND ri.IngredientID NOT IN ("
-             + "        SELECT IngredientID "
-             + "        FROM users_ingredients "
-             + "        WHERE UserID = ?"
-             + "    )"
-             + ");";
+        sql += ");";
+//        sql += ") "
+//             + "AND NOT EXISTS ("
+//             + "    SELECT 1 "
+//             + "    FROM recipe_ingredients ri "
+//             + "    WHERE ri.RecipeID = recipes.RecipeID "
+//             + "    AND ri.IngredientID NOT IN ("
+//             + "        SELECT IngredientID "
+//             + "        FROM users_ingredients "
+//             + "        WHERE UserID = ?"
+//             + "    )"
+//             + ");";
 
         try {
         	DbConnection dbCon = new DbConnection();
@@ -459,8 +464,8 @@ public class RecipeDaoImpl implements RecipeDao {
                 ps.setString(parameterIndex++, "%" + keyword + "%");  // Bind keywords
             }
 
-            ps.setInt(parameterIndex++, userId);  // User ID for ingredients
-
+//            ps.setInt(parameterIndex++, userId);  // User ID for ingredients
+            
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Recipe recipe = new Recipe();
@@ -471,6 +476,7 @@ public class RecipeDaoImpl implements RecipeDao {
                     recipe.setServings(rs.getInt("Servings"));
                     recipe.setUserId(rs.getInt("UserID"));
                     recipe.setImageId(rs.getInt("ImageID"));
+                    recipe.setReputation(rs.getInt("Reputation"));
                     recipes.add(recipe);
                 }
             }

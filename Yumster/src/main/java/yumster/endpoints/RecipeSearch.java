@@ -110,8 +110,8 @@ public class RecipeSearch extends HttpServlet {
 			response.getWriter().print(res.toJson());
 			return;
 		}
-		
-		List<String> keywords = new Gson().fromJson(request.getParameter("keywords"), new TypeToken<List<String>>(){}.getType());
+
+		List<String> keywords = new Gson().fromJson("[]", new TypeToken<List<String>>(){}.getType());
 
 		Integer min = limit*page-limit;
 		List<yumster.obj.Recipe> recipes = null;
@@ -119,7 +119,7 @@ public class RecipeSearch extends HttpServlet {
 		if (user == null) {
 			recipes = recipeDao.search(min, limit, sort, 0);
 		} else {		
-			recipes = recipeDao.search(min, limit, sort, user.getId());
+//			recipes = recipeDao.search(min, limit, sort, user.getId());
 			recipes = recipeDao.filter(user.getId(), keywords);
 		}
 		
